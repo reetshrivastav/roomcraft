@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import Home from "./pages/Home";
 import RoomSetup from "./pages/RoomSetup";
+import LayoutView from "./pages/LayoutView";
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/room-setup" element={<RoomSetup />} />
+        <Route path="/layout" element={<LayoutView />} />
       </Routes>
     </BrowserRouter>
   );
