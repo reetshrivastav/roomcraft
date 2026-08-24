@@ -1,5 +1,6 @@
 const express = require("express");
 const Room = require("../models/Room");
+const GeneratedLayout = require("../models/GeneratedLayout");
 
 const router = express.Router();
 
@@ -146,6 +147,92 @@ router.post("/", async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to create room."
+    });
+  }
+});
+
+// POST /rooms/:id/generate
+router.post("/:id/generate", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Find the room
+    const room = await Room.findById(id);
+
+    if (!room) {
+      return res.status(404).json({
+        success: false,
+        message: "Room not found."
+      });
+    }
+
+    // Create a hardcoded layout for now.
+    // The genetic algorithm will replace this later.
+    const generatedLayout = await GeneratedLayout.create({
+      roomId: room._id.toString(),
+
+      layout: room.furnitureSelection.map((furnitureId, index) => ({
+        furnitureId,
+        x: 50 + index * 100,
+        y: 50 + index * 50,
+        rotation: 0
+      })),
+
+      scores: {
+        trafficFlow: 0.85,
+        lightExposure: 0.75,
+        clearance: 0.90,
+        clustering: 0.80
+      },
+
+      isParetoOptimal: true
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Layout generated successfully.",
+      layout: generatedLayout
+    });
+  } catch (error) {
+    console.error("Generate layout error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to generate layout."
+    });
+  }
+});
+
+// GET /rooms/:id/layouts
+router.get("/:id/layouts", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Verify that the room exists
+    const room = await Room.findById(id);
+
+    if (!room) {
+      return res.status(404).json({
+        success: false,
+        message: "Room not found."
+      });
+    }
+
+    // Fetch all generated layouts for this room
+    const layouts = await GeneratedLayout.find({
+      roomId: room._id.toString()
+    }).sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      layouts
+    });
+  } catch (error) {
+    console.error("Get room layouts error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch room layouts."
     });
   }
 });

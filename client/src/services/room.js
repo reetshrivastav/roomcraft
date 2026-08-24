@@ -1,19 +1,23 @@
 const API_BASE_URL = "http://localhost:5000";
 
 export async function createRoom(roomData) {
-  const response = await fetch(`${API_BASE_URL}/rooms`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(roomData)
-  });
+  const response = await fetch(
+    `${API_BASE_URL}/rooms`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(roomData),
+    }
+  );
 
   const data = await response.json();
 
   if (!response.ok) {
     throw new Error(
-      data.message || "Failed to create room."
+      data.message ||
+        "Failed to create room."
     );
   }
 
@@ -26,8 +30,8 @@ export async function generateLayouts(roomId) {
     {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+      },
     }
   );
 
@@ -35,7 +39,8 @@ export async function generateLayouts(roomId) {
 
   if (!response.ok) {
     throw new Error(
-      data.message || "Failed to generate layouts."
+      data.message ||
+        "Failed to generate layouts."
     );
   }
 
@@ -51,7 +56,8 @@ export async function getRoomLayouts(roomId) {
 
   if (!response.ok) {
     throw new Error(
-      data.message || "Failed to fetch room layouts."
+      data.message ||
+        "Failed to fetch room layouts."
     );
   }
 
