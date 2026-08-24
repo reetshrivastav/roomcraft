@@ -1,0 +1,122 @@
+[
+  {
+    "id": "single-bed",
+    "name": "Single Bed",
+    "width": 100,
+    "depth": 200,
+    "category": "bed",
+    "tags": ["must-be-near-wall"]
+  },
+  {
+    "id": "double-bed",
+    "name": "Double Bed",
+    "width": 160,
+    "depth": 200,
+    "category": "bed",
+    "tags": ["must-be-near-wall"]
+  },
+  {
+    "id": "wardrobe",
+    "name": "Wardrobe",
+    "width": 120,
+    "depth": 60,
+    "category": "storage",
+    "tags": ["must-be-near-wall"]
+  },
+  {
+    "id": "nightstand",
+    "name": "Nightstand",
+    "width": 50,
+    "depth": 40,
+    "category": "storage",
+    "tags": []
+  },
+  {
+    "id": "desk",
+    "name": "Desk",
+    "width": 120,
+    "depth": 60,
+    "category": "work",
+    "tags": ["light-preferring"]
+  },
+  {
+    "id": "office-chair",
+    "name": "Office Chair",
+    "width": 60,
+    "depth": 60,
+    "category": "seating",
+    "tags": []
+  },
+  {
+    "id": "sofa",
+    "name": "Sofa",
+    "width": 200,
+    "depth": 90,
+    "category": "seating",
+    "tags": ["must-be-near-wall"]
+  },
+  {
+    "id": "coffee-table",
+    "name": "Coffee Table",
+    "width": 120,
+    "depth": 60,
+    "category": "table",
+    "tags": []
+  },
+  {
+    "id": "tv-stand",
+    "name": "TV Stand",
+    "width": 150,
+    "depth": 40,
+    "category": "entertainment",
+    "tags": ["must-be-near-wall"]
+  },
+  {
+    "id": "bookshelf",
+    "name": "Bookshelf",
+    "width": 80,
+    "depth": 30,
+    "category": "storage",
+    "tags": ["must-be-near-wall", "light-avoiding"]
+  },
+  {
+    "id": "dining-table",
+    "name": "Dining Table",
+    "width": 160,
+    "depth": 90,
+    "category": "table",
+    "tags": []
+  },
+  {
+    "id": "dining-chair",
+    "name": "Dining Chair",
+    "width": 45,
+    "depth": 50,
+    "category": "seating",
+    "tags": []
+  },
+  {
+    "id": "armchair",
+    "name": "Armchair",
+    "width": 80,
+    "depth": 80,
+    "category": "seating",
+    "tags": []
+  },
+  {
+    "id": "side-table",
+    "name": "Side Table",
+    "width": 50,
+    "depth": 50,
+    "category": "table",
+    "tags": []
+  },
+  {
+    "id": "dresser",
+    "name": "Dresser",
+    "width": 100,
+    "depth": 50,
+    "category": "storage",
+    "tags": ["must-be-near-wall"]
+  }
+]
