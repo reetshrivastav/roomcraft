@@ -82,6 +82,11 @@ const roomSchema = new mongoose.Schema(
     furnitureSelection: {
       type: [String],
       default: []
+    },
+
+    selectedLayoutId: {
+      type: String,
+      default: null
     }
   },
   {
@@ -89,4 +94,7 @@ const roomSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("Room", roomSchema);
+module.exports = mongoose.model(
+  "Room",
+  roomSchema
+);
