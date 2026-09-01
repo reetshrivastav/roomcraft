@@ -2,13 +2,13 @@ import { useState, useMemo } from "react";
 import { Maximize2, Eye, Sun, Footprints, ShieldCheck } from "lucide-react";
 
 const CATEGORY_STYLES = {
-  bed: { bg: "rgba(99, 102, 241, 0.22)", border: "#818cf8", text: "#e0e7ff", icon: "🛏️" },
-  storage: { bg: "rgba(148, 163, 184, 0.22)", border: "#94a3b8", text: "#f1f5f9", icon: "🚪" },
-  work: { bg: "rgba(245, 158, 11, 0.22)", border: "#fbbf24", text: "#fef3c7", icon: "💻" },
-  seating: { bg: "rgba(16, 185, 129, 0.22)", border: "#34d399", text: "#d1fae5", icon: "🛋️" },
-  table: { bg: "rgba(244, 63, 94, 0.22)", border: "#fb7185", text: "#ffe4e6", icon: "☕" },
-  entertainment: { bg: "rgba(6, 182, 212, 0.22)", border: "#22d3ee", text: "#cffafe", icon: "📺" },
-  default: { bg: "rgba(139, 92, 246, 0.22)", border: "#a78bfa", text: "#ede9fe", icon: "📦" }
+  bed: { bg: "rgba(180, 123, 72, 0.15)", border: "#b47b48", text: "#5c3818", icon: "🛏️" },
+  storage: { bg: "rgba(100, 116, 139, 0.15)", border: "#64748b", text: "#334155", icon: "🚪" },
+  work: { bg: "rgba(217, 119, 6, 0.15)", border: "#d97706", text: "#78350f", icon: "💻" },
+  seating: { bg: "rgba(5, 150, 105, 0.15)", border: "#059669", text: "#064e3b", icon: "🛋️" },
+  table: { bg: "rgba(225, 29, 72, 0.15)", border: "#e11d48", text: "#881337", icon: "☕" },
+  entertainment: { bg: "rgba(2, 132, 199, 0.15)", border: "#0284c7", text: "#0c4a6e", icon: "📺" },
+  default: { bg: "rgba(124, 58, 237, 0.15)", border: "#7c3aed", text: "#4c1d95", icon: "📦" }
 };
 
 function RoomCanvas({
@@ -25,7 +25,6 @@ function RoomCanvas({
   const [showTrafficPaths, setShowTrafficPaths] = useState(true);
   const [showClearanceHalos, setShowClearanceHalos] = useState(false);
 
-  // Maximum canvas viewport size
   const CANVAS_MAX_W = 760;
   const CANVAS_MAX_H = 520;
 
@@ -43,7 +42,7 @@ function RoomCanvas({
   }, [furnitureCatalog]);
 
   const getOpeningGeometry = (opening, type = "door") => {
-    const openingLength = 80 * scale; // Standard 80cm opening
+    const openingLength = 80 * scale;
     const wallThick = 12;
 
     switch (opening.wall) {
@@ -94,15 +93,16 @@ function RoomCanvas({
           justifyContent: "space-between",
           width: "100%",
           maxWidth: canvasWidth + 40,
-          background: "rgba(17, 24, 39, 0.7)",
+          background: "var(--bg-card)",
           padding: "8px 16px",
           borderRadius: "var(--radius-md)",
           border: "1px solid var(--border-subtle)",
+          boxShadow: "var(--shadow-sm)",
           fontSize: "12px"
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-            <span style={{ color: "var(--text-secondary)", fontWeight: 600 }}>
-              Blueprint: {roomWidth} × {roomHeight} cm
+            <span style={{ color: "var(--text-primary)", fontWeight: 700 }}>
+              2D CAD Blueprint: {roomWidth} × {roomHeight} cm
             </span>
             <span style={{ color: "var(--text-muted)" }}>
               Scale: {(scale * 100).toFixed(0)}%
@@ -118,11 +118,11 @@ function RoomCanvas({
                 gap: "4px",
                 padding: "4px 8px",
                 borderRadius: "var(--radius-sm)",
-                background: showLightBeams ? "rgba(6, 182, 212, 0.2)" : "transparent",
-                color: showLightBeams ? "#22d3ee" : "var(--text-muted)",
-                border: "1px solid " + (showLightBeams ? "rgba(6, 182, 212, 0.4)" : "var(--border-subtle)"),
+                background: showLightBeams ? "rgba(2, 132, 199, 0.12)" : "transparent",
+                color: showLightBeams ? "#0284c7" : "var(--text-muted)",
+                border: "1px solid " + (showLightBeams ? "rgba(2, 132, 199, 0.3)" : "var(--border-subtle)"),
                 fontSize: "11px",
-                fontWeight: 500
+                fontWeight: 600
               }}
               title="Toggle Window Sunlight Rays"
             >
@@ -138,11 +138,11 @@ function RoomCanvas({
                 gap: "4px",
                 padding: "4px 8px",
                 borderRadius: "var(--radius-sm)",
-                background: showTrafficPaths ? "rgba(99, 102, 241, 0.2)" : "transparent",
-                color: showTrafficPaths ? "#a5b4fc" : "var(--text-muted)",
-                border: "1px solid " + (showTrafficPaths ? "rgba(99, 102, 241, 0.4)" : "var(--border-subtle)"),
+                background: showTrafficPaths ? "rgba(180, 123, 72, 0.12)" : "transparent",
+                color: showTrafficPaths ? "#b47b48" : "var(--text-muted)",
+                border: "1px solid " + (showTrafficPaths ? "rgba(180, 123, 72, 0.3)" : "var(--border-subtle)"),
                 fontSize: "11px",
-                fontWeight: 500
+                fontWeight: 600
               }}
               title="Toggle Door Access Corridors"
             >
@@ -158,11 +158,11 @@ function RoomCanvas({
                 gap: "4px",
                 padding: "4px 8px",
                 borderRadius: "var(--radius-sm)",
-                background: showClearanceHalos ? "rgba(16, 185, 129, 0.2)" : "transparent",
-                color: showClearanceHalos ? "#34d399" : "var(--text-muted)",
-                border: "1px solid " + (showClearanceHalos ? "rgba(16, 185, 129, 0.4)" : "var(--border-subtle)"),
+                background: showClearanceHalos ? "rgba(5, 150, 105, 0.12)" : "transparent",
+                color: showClearanceHalos ? "#059669" : "var(--text-muted)",
+                border: "1px solid " + (showClearanceHalos ? "rgba(5, 150, 105, 0.3)" : "var(--border-subtle)"),
                 fontSize: "11px",
-                fontWeight: 500
+                fontWeight: 600
               }}
               title="Toggle Furniture Spacing Halos"
             >
@@ -173,16 +173,16 @@ function RoomCanvas({
         </div>
       )}
 
-      {/* Main 2D Blueprint Room Canvas */}
+      {/* Main Blueprint Room Canvas Container */}
       <div
         style={{
           width: canvasWidth + 40,
           height: canvasHeight + 40,
           padding: "20px",
-          background: "radial-gradient(circle at center, #0e1526 0%, #080c14 100%)",
+          background: "#f4f0e6",
           borderRadius: "var(--radius-lg)",
-          border: "1px solid var(--border-subtle)",
-          boxShadow: "0 16px 36px rgba(0, 0, 0, 0.6), 0 0 20px rgba(99, 102, 241, 0.1)",
+          border: "1px solid var(--border-medium)",
+          boxShadow: "var(--shadow-md)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -196,20 +196,20 @@ function RoomCanvas({
             width: canvasWidth,
             height: canvasHeight,
             position: "relative",
-            background: "linear-gradient(135deg, #0c1220 0%, #090d16 100%)",
-            border: "4px solid #475569",
-            borderRadius: "4px",
-            boxShadow: "inset 0 0 20px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05)"
+            background: "#ffffff",
+            border: "4px solid #332a24",
+            borderRadius: "3px",
+            boxShadow: "0 4px 12px rgba(50, 35, 20, 0.08)"
           }}
         >
-          {/* Subtle 50cm Blueprint Grid */}
+          {/* Subtle 50cm Architectural Grid */}
           <div
             style={{
               position: "absolute",
               inset: 0,
               backgroundImage: `
-                linear-gradient(to right, rgba(99, 102, 241, 0.08) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(99, 102, 241, 0.08) 1px, transparent 1px)
+                linear-gradient(to right, rgba(70, 52, 38, 0.06) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(70, 52, 38, 0.06) 1px, transparent 1px)
               `,
               backgroundSize: `${50 * scale}px ${50 * scale}px`,
               pointerEvents: "none"
@@ -242,7 +242,7 @@ function RoomCanvas({
                       y1={doorCenterY}
                       x2={roomCenterX}
                       y2={roomCenterY}
-                      stroke="#818cf8"
+                      stroke="#b47b48"
                       strokeWidth="2"
                       strokeDasharray="6 4"
                       opacity="0.65"
@@ -251,8 +251,8 @@ function RoomCanvas({
                       cx={doorCenterX}
                       cy={doorCenterY}
                       r={70 * scale}
-                      fill="rgba(99, 102, 241, 0.08)"
-                      stroke="#6366f1"
+                      fill="rgba(180, 123, 72, 0.06)"
+                      stroke="#b47b48"
                       strokeWidth="1"
                       strokeDasharray="3 3"
                     />
@@ -283,7 +283,7 @@ function RoomCanvas({
                 style={{
                   position: "absolute",
                   inset: 0,
-                  background: "radial-gradient(circle at center, rgba(6, 182, 212, 0.15) 0%, rgba(6, 182, 212, 0.01) 100%)",
+                  background: "radial-gradient(circle at center, rgba(2, 132, 199, 0.18) 0%, rgba(2, 132, 199, 0.02) 100%)",
                   clipPath,
                   pointerEvents: "none",
                   zIndex: 3
@@ -295,11 +295,9 @@ function RoomCanvas({
           {/* Architectural Doors */}
           {doors.map((door, index) => {
             const geom = getOpeningGeometry(door, "door");
-            const swingRadius = 50 * scale;
 
             return (
               <div key={`door-${index}`}>
-                {/* Door Frame Cutout */}
                 <div
                   style={{
                     position: "absolute",
@@ -307,13 +305,13 @@ function RoomCanvas({
                     top: geom.y,
                     width: geom.w,
                     height: geom.h,
-                    backgroundColor: "#92400e",
-                    border: "1px solid #d97706",
+                    backgroundColor: "#b47b48",
+                    border: "1px solid #784c28",
                     borderRadius: "2px",
                     zIndex: 10,
-                    boxShadow: "0 0 8px rgba(217, 119, 6, 0.4)"
+                    boxShadow: "0 1px 4px rgba(120, 76, 40, 0.3)"
                   }}
-                  title={`Door on ${door.wall} wall (x: ${door.x}cm, y: ${door.y}cm)`}
+                  title={`Door on ${door.wall} wall (${door.x}cm, ${door.y}cm)`}
                 />
               </div>
             );
@@ -332,20 +330,19 @@ function RoomCanvas({
                   top: geom.y,
                   width: geom.w,
                   height: geom.h,
-                  backgroundColor: "#0284c7",
-                  border: "1.5px solid #38bdf8",
+                  backgroundColor: "#38bdf8",
+                  border: "1.5px solid #0284c7",
                   borderRadius: "2px",
                   zIndex: 10,
-                  boxShadow: "0 0 12px rgba(56, 189, 248, 0.6)"
+                  boxShadow: "0 0 8px rgba(56, 189, 248, 0.4)"
                 }}
-                title={`Window on ${window.wall} wall (x: ${window.x}cm, y: ${window.y}cm)`}
+                title={`Window on ${window.wall} wall (${window.x}cm, ${window.y}cm)`}
               >
-                {/* Double pane line */}
                 <div
                   style={{
                     position: "absolute",
                     inset: "2px",
-                    background: "rgba(255, 255, 255, 0.4)",
+                    background: "rgba(255, 255, 255, 0.8)",
                     borderRadius: "1px"
                   }}
                 />
@@ -378,12 +375,12 @@ function RoomCanvas({
                   top: posY,
                   width: w,
                   height: h,
-                  backgroundColor: isHovered ? "rgba(99, 102, 241, 0.35)" : categoryStyle.bg,
-                  border: `2px solid ${isHovered ? "#ffffff" : categoryStyle.border}`,
-                  borderRadius: "6px",
+                  backgroundColor: isHovered ? "rgba(180, 123, 72, 0.25)" : categoryStyle.bg,
+                  border: `2px solid ${isHovered ? "#b47b48" : categoryStyle.border}`,
+                  borderRadius: "5px",
                   boxShadow: isHovered
-                    ? `0 0 20px ${categoryStyle.border}, 0 8px 16px rgba(0, 0, 0, 0.6)`
-                    : "0 4px 10px rgba(0, 0, 0, 0.4)",
+                    ? `0 0 12px ${categoryStyle.border}, 0 4px 8px rgba(0, 0, 0, 0.12)`
+                    : "0 2px 5px rgba(50, 35, 20, 0.08)",
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
@@ -392,7 +389,7 @@ function RoomCanvas({
                   color: categoryStyle.text,
                   fontSize: Math.max(10, Math.min(13, w / 8)),
                   cursor: "pointer",
-                  transition: "transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease",
+                  transition: "transform 0.15s ease, box-shadow 0.15s ease",
                   transform: isHovered ? "scale(1.02)" : "scale(1)",
                   zIndex: isHovered ? 20 : 6,
                   overflow: "hidden"
@@ -404,16 +401,16 @@ function RoomCanvas({
                     style={{
                       position: "absolute",
                       inset: `-${25 * scale}px`,
-                      border: "1px dashed rgba(16, 185, 129, 0.4)",
-                      borderRadius: "8px",
+                      border: "1px dashed rgba(5, 150, 105, 0.4)",
+                      borderRadius: "6px",
                       pointerEvents: "none"
                     }}
                   />
                 )}
 
                 {/* Furniture Icon + Name */}
-                <div style={{ display: "flex", alignItems: "center", gap: "4px", fontWeight: 600 }}>
-                  <span style={{ fontSize: "14px" }}>{categoryStyle.icon}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: "4px", fontWeight: 700 }}>
+                  <span style={{ fontSize: "13px" }}>{categoryStyle.icon}</span>
                   <span style={{
                     whiteSpace: "nowrap",
                     overflow: "hidden",
@@ -425,12 +422,13 @@ function RoomCanvas({
                 </div>
 
                 {/* Dimensions + Rotation Label */}
-                {w > 60 && h > 40 && (
+                {w > 60 && h > 35 && (
                   <div style={{
                     fontSize: "9px",
-                    color: "rgba(255, 255, 255, 0.75)",
+                    color: "var(--text-muted)",
                     fontFamily: "var(--font-mono)",
-                    marginTop: "2px"
+                    marginTop: "2px",
+                    fontWeight: 600
                   }}>
                     {furniture.width}×{furniture.depth} cm ({item.rotation}°)
                   </div>
@@ -455,7 +453,7 @@ function RoomCanvas({
           fontSize: "13px",
           animation: "fadeIn 0.2s ease"
         }}>
-          <span style={{ fontWeight: 600, color: "#ffffff" }}>
+          <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>
             {hoveredItem.name}
           </span>
           <span style={{ color: "var(--text-muted)" }}>|</span>
@@ -467,7 +465,7 @@ function RoomCanvas({
             Size: {hoveredItem.width} × {hoveredItem.depth} cm
           </span>
           <span style={{ color: "var(--text-muted)" }}>|</span>
-          <span style={{ color: "#a5b4fc", fontWeight: 600 }}>
+          <span style={{ color: "var(--primary)", fontWeight: 700 }}>
             Rotation: {hoveredItem.rotation}°
           </span>
         </div>

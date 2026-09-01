@@ -13,7 +13,7 @@ function Navbar() {
       justifyContent: "space-between",
       padding: "16px 32px",
       borderBottom: "1px solid var(--border-subtle)",
-      background: "rgba(11, 15, 23, 0.8)",
+      background: "rgba(251, 249, 245, 0.92)",
       backdropFilter: "blur(12px)",
       position: "sticky",
       top: 0,
@@ -24,20 +24,20 @@ function Navbar() {
           width: "36px",
           height: "36px",
           borderRadius: "10px",
-          background: "linear-gradient(135deg, #6366f1 0%, #06b6d4 100%)",
+          background: "linear-gradient(135deg, #b47b48 0%, #784c28 100%)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          boxShadow: "0 0 15px rgba(99, 102, 241, 0.4)"
+          boxShadow: "0 2px 10px rgba(180, 123, 72, 0.3)"
         }}>
           <Compass size={20} color="#ffffff" />
         </div>
         <div>
-          <span style={{ fontSize: "18px", fontWeight: 700, letterSpacing: "-0.02em", color: "#ffffff" }}>
-            Room<span style={{ color: "#06b6d4" }}>Craft</span>
+          <span style={{ fontSize: "19px", fontWeight: 700, letterSpacing: "-0.02em", color: "var(--text-primary)" }}>
+            Room<span style={{ color: "#b47b48" }}>Craft</span>
           </span>
-          <span style={{ fontSize: "11px", color: "var(--text-muted)", display: "block", marginTop: "-3px" }}>
-            AI Architecture Lab
+          <span style={{ fontSize: "11px", color: "var(--text-muted)", display: "block", marginTop: "-3px", fontWeight: 500 }}>
+            Architectural AI Studio
           </span>
         </div>
       </Link>
@@ -52,9 +52,9 @@ function Navbar() {
             padding: "8px 14px",
             borderRadius: "var(--radius-md)",
             fontSize: "14px",
-            fontWeight: 500,
-            color: isActive("/") ? "#ffffff" : "var(--text-secondary)",
-            background: isActive("/") ? "rgba(255, 255, 255, 0.08)" : "transparent",
+            fontWeight: 600,
+            color: isActive("/") ? "var(--primary)" : "var(--text-secondary)",
+            background: isActive("/") ? "rgba(180, 123, 72, 0.1)" : "transparent",
             transition: "all 0.2s ease"
           }}
         >
@@ -71,9 +71,9 @@ function Navbar() {
             padding: "8px 14px",
             borderRadius: "var(--radius-md)",
             fontSize: "14px",
-            fontWeight: 500,
-            color: isActive("/room-setup") ? "#ffffff" : "var(--text-secondary)",
-            background: isActive("/room-setup") ? "rgba(255, 255, 255, 0.08)" : "transparent",
+            fontWeight: 600,
+            color: isActive("/room-setup") ? "var(--primary)" : "var(--text-secondary)",
+            background: isActive("/room-setup") ? "rgba(180, 123, 72, 0.1)" : "transparent",
             transition: "all 0.2s ease"
           }}
         >
@@ -90,10 +90,10 @@ function Navbar() {
               padding: "8px 14px",
               borderRadius: "var(--radius-md)",
               fontSize: "14px",
-              fontWeight: 500,
-              color: "#06b6d4",
-              background: "rgba(6, 182, 212, 0.12)",
-              border: "1px solid rgba(6, 182, 212, 0.25)"
+              fontWeight: 600,
+              color: "#b47b48",
+              background: "rgba(180, 123, 72, 0.12)",
+              border: "1px solid rgba(180, 123, 72, 0.25)"
             }}
           >
             <Layers size={16} />

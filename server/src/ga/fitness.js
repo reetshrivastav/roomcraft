@@ -137,7 +137,7 @@ function calculateClearance(room, chromosome) {
     return 1;
   }
 
-  // 1. Overlap score
+  // 1. Strict overlap penalty (zero collisions required)
   let overlapCount = 0;
   for (let i = 0; i < chromosome.length; i++) {
     for (let j = i + 1; j < chromosome.length; j++) {
@@ -148,7 +148,8 @@ function calculateClearance(room, chromosome) {
   }
 
   const pairCount = (chromosome.length * (chromosome.length - 1)) / 2;
-  const overlapScore = pairCount === 0 ? 1 : Math.max(0, 1 - overlapCount / pairCount);
+  // If even a single item overlaps, drastically penalize
+  const overlapScore = overlapCount === 0 ? 1.0 : Math.max(0.01, 1 - (overlapCount * 0.6));
 
   // 2. Minimum pairwise distance spacing score
   const minimumDistance = minimumFurnitureDistance(chromosome);
@@ -199,8 +200,11 @@ function calculateClearance(room, chromosome) {
 
   const wallScore = wallConstraintCount > 0 ? wallScoreSum / wallConstraintCount : 1;
 
-  // Composite clearance score
-  const finalScore = (overlapScore * 0.4) + (spacingScore * 0.2) + (doorClearanceScore * 0.25) + (wallScore * 0.15);
+  // Composite clearance score with heavy weight on zero overlap
+  let finalScore = (overlapScore * 0.5) + (spacingScore * 0.15) + (doorClearanceScore * 0.2) + (wallScore * 0.15);
+  if (overlapCount > 0) {
+    finalScore *= 0.3; // Hard penalty multiplier if overlapping
+  }
 
   return Number(Math.max(0, Math.min(1, finalScore)).toFixed(4));
 }

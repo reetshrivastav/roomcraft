@@ -7,22 +7,22 @@ const PRESET_TEMPLATES = [
     id: "master-bedroom",
     title: "Master Bedroom Suite",
     dimensions: "500 × 420 cm",
-    furniture: ["double-bed", "wardrobe", "nightstand", "dresser", "armchair"],
-    desc: "Optimized for quiet circulation, bedside lighting, and wall-aligned wardrobes."
+    furniture: ["double-bed", "wardrobe", "nightstand", "nightstand", "dresser", "armchair"],
+    desc: "Optimized for quiet circulation, dual nightstand alignment, and perimeter wardrobe storage."
+  },
+  {
+    id: "dining-living",
+    title: "Dining & Living Salon",
+    dimensions: "600 × 450 cm",
+    furniture: ["dining-table", "dining-chair", "dining-chair", "dining-chair", "dining-chair", "sofa", "coffee-table", "tv-stand"],
+    desc: "4-seater dining perimeter arrangement paired with a comfortable living and entertainment zone."
   },
   {
     id: "home-office",
     title: "Executive Home Office",
     dimensions: "450 × 380 cm",
     furniture: ["desk", "office-chair", "bookshelf", "sofa", "coffee-table"],
-    desc: "Window-aligned natural light on desk, shielded bookshelf, and client seating zone."
-  },
-  {
-    id: "studio-apartment",
-    title: "Cozy Studio Living",
-    dimensions: "600 × 480 cm",
-    furniture: ["single-bed", "sofa", "coffee-table", "tv-stand", "dining-table", "dining-chair", "wardrobe"],
-    desc: "Multi-functional zone clustering with unobstructed primary entrance corridors."
+    desc: "Window-aligned natural lighting on workstation, shielded bookcase, and cozy seating."
   }
 ];
 
@@ -48,7 +48,7 @@ function Home() {
         flexDirection: "column",
         alignItems: "center"
       }}>
-        {/* Subtle Background Glow Spheres */}
+        {/* Subtle Warm Background Glow */}
         <div style={{
           position: "absolute",
           top: "10%",
@@ -56,7 +56,7 @@ function Home() {
           transform: "translateX(-50%)",
           width: "600px",
           height: "350px",
-          background: "radial-gradient(circle, rgba(99, 102, 241, 0.22) 0%, rgba(6, 182, 212, 0.08) 50%, transparent 80%)",
+          background: "radial-gradient(circle, rgba(180, 123, 72, 0.12) 0%, rgba(244, 240, 230, 0.4) 60%, transparent 80%)",
           filter: "blur(60px)",
           pointerEvents: "none",
           zIndex: 0
@@ -69,30 +69,28 @@ function Home() {
             gap: "8px",
             padding: "6px 16px",
             borderRadius: "var(--radius-full)",
-            background: "rgba(99, 102, 241, 0.15)",
-            border: "1px solid rgba(99, 102, 241, 0.3)",
-            color: "#a5b4fc",
+            background: "rgba(180, 123, 72, 0.1)",
+            border: "1px solid rgba(180, 123, 72, 0.25)",
+            color: "#9c6536",
             fontSize: "13px",
-            fontWeight: 600,
+            fontWeight: 700,
             marginBottom: "24px"
           }}>
-            <Dna size={16} color="#6366f1" />
-            <span>Multi-Objective Genetic Algorithm (Pareto Front)</span>
+            <Dna size={16} color="#b47b48" />
+            <span>Multi-Objective Genetic Algorithm (Pareto Optimization)</span>
           </div>
 
           <h1 style={{
-            fontSize: "clamp(36px, 6vw, 64px)",
+            fontSize: "clamp(36px, 6vw, 62px)",
             fontWeight: 700,
-            lineHeight: 1.1,
+            lineHeight: 1.15,
             letterSpacing: "-0.03em",
             marginBottom: "20px",
-            background: "linear-gradient(135deg, #ffffff 30%, #94a3b8 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent"
+            color: "var(--text-primary)"
           }}>
             Architectural Room Layouts <br />
             <span style={{
-              background: "linear-gradient(135deg, #6366f1 0%, #06b6d4 100%)",
+              background: "linear-gradient(135deg, #b47b48 0%, #784c28 100%)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent"
             }}>
@@ -107,8 +105,7 @@ function Home() {
             margin: "0 auto 36px",
             lineHeight: 1.6
           }}>
-            Design and generate mathematically optimal furniture arrangements. RoomCraft balances
-            walking traffic flow, window natural lighting, ergonomic clearances, and functional clustering in real-time.
+            Design and generate mathematically optimal furniture arrangements in 2D blueprint and 3D orbit views. RoomCraft balances walking corridors, window sunlight, ergonomic clearances, and functional clustering in real-time.
           </p>
 
           <div style={{ display: "flex", gap: "16px", justifyContent: "center", flexWrap: "wrap" }}>
@@ -118,7 +115,7 @@ function Home() {
               style={{ padding: "14px 28px", fontSize: "16px" }}
             >
               <Sparkles size={18} />
-              <span>Configure Your Room</span>
+              <span>Configure Your Space</span>
               <ArrowRight size={18} />
             </Link>
           </div>
@@ -128,7 +125,7 @@ function Home() {
       {/* Instant Presets Section */}
       <section style={{ maxWidth: "1160px", margin: "0 auto 60px", padding: "0 24px", width: "100%" }}>
         <div style={{ textAlign: "center", marginBottom: "32px" }}>
-          <span style={{ fontSize: "13px", fontWeight: 700, color: "#06b6d4", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+          <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--primary)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
             Instant Starter Templates
           </span>
           <h2 style={{ fontSize: "28px", marginTop: "4px" }}>
@@ -159,7 +156,7 @@ function Home() {
             >
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                  <h3 style={{ fontSize: "18px", color: "#ffffff" }}>{preset.title}</h3>
+                  <h3 style={{ fontSize: "18px", color: "var(--text-primary)" }}>{preset.title}</h3>
                   <span className="badge badge-tag" style={{ fontFamily: "var(--font-mono)" }}>
                     {preset.dimensions}
                   </span>
@@ -169,15 +166,16 @@ function Home() {
                 </p>
 
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "20px" }}>
-                  {preset.furniture.map((f) => (
+                  {preset.furniture.map((f, i) => (
                     <span
-                      key={f}
+                      key={`${f}-${i}`}
                       style={{
                         padding: "3px 8px",
-                        background: "rgba(255, 255, 255, 0.05)",
+                        background: "var(--bg-input)",
                         borderRadius: "4px",
                         fontSize: "11px",
-                        color: "var(--text-muted)"
+                        color: "var(--text-secondary)",
+                        fontWeight: 500
                       }}
                     >
                       {f}
@@ -201,7 +199,7 @@ function Home() {
       {/* Core Objectives Breakdown Grid */}
       <section style={{ maxWidth: "1160px", margin: "0 auto 80px", padding: "0 24px", width: "100%" }}>
         <div style={{ textAlign: "center", marginBottom: "40px" }}>
-          <span style={{ fontSize: "13px", fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+          <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--primary)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
             Genetic Algorithm Objectives
           </span>
           <h2 style={{ fontSize: "28px", marginTop: "4px" }}>
@@ -219,18 +217,18 @@ function Home() {
               width: "40px",
               height: "40px",
               borderRadius: "10px",
-              background: "rgba(99, 102, 241, 0.15)",
+              background: "rgba(180, 123, 72, 0.12)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#818cf8",
+              color: "#b47b48",
               marginBottom: "14px"
             }}>
               <Compass size={22} />
             </div>
             <h4 style={{ fontSize: "16px", marginBottom: "8px" }}>Traffic Flow</h4>
             <p style={{ fontSize: "13px", color: "var(--text-secondary)", lineHeight: 1.5 }}>
-              Traces ray-cast walking corridors between doors and room centers, penalizing furniture obstructing transit paths.
+              Traces clear walking corridors between doors and room centers, scoring unobstructed transit paths.
             </p>
           </div>
 
@@ -239,18 +237,18 @@ function Home() {
               width: "40px",
               height: "40px",
               borderRadius: "10px",
-              background: "rgba(6, 182, 212, 0.15)",
+              background: "rgba(2, 132, 199, 0.12)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#22d3ee",
+              color: "#0284c7",
               marginBottom: "14px"
             }}>
               <Sparkles size={22} />
             </div>
             <h4 style={{ fontSize: "16px", marginBottom: "8px" }}>Light Exposure</h4>
             <p style={{ fontSize: "13px", color: "var(--text-secondary)", lineHeight: 1.5 }}>
-              Rewards light-preferring items (desks) near windows while shielding light-sensitive storage (bookshelves).
+              Rewards light-preferring items (desks) near windows while shielding glare-sensitive storage (bookshelves).
             </p>
           </div>
 
@@ -259,18 +257,18 @@ function Home() {
               width: "40px",
               height: "40px",
               borderRadius: "10px",
-              background: "rgba(16, 185, 129, 0.15)",
+              background: "rgba(5, 150, 105, 0.12)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#34d399",
+              color: "#059669",
               marginBottom: "14px"
             }}>
               <ShieldCheck size={22} />
             </div>
             <h4 style={{ fontSize: "16px", marginBottom: "8px" }}>Clearance & Walls</h4>
             <p style={{ fontSize: "13px", color: "var(--text-secondary)", lineHeight: 1.5 }}>
-              Prevents spatial collisions, maintains 70cm doorway swing clearance, and satisfies wall-anchored tags.
+              Strictly eliminates collisions, maintains 70cm doorway swing clearance, and anchors beds and wardrobes to walls.
             </p>
           </div>
 
@@ -279,18 +277,18 @@ function Home() {
               width: "40px",
               height: "40px",
               borderRadius: "10px",
-              background: "rgba(245, 158, 11, 0.15)",
+              background: "rgba(217, 119, 6, 0.12)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#fbbf24",
+              color: "#d97706",
               marginBottom: "14px"
             }}>
               <Layers size={22} />
             </div>
             <h4 style={{ fontSize: "16px", marginBottom: "8px" }}>Functional Clustering</h4>
             <p style={{ fontSize: "13px", color: "var(--text-secondary)", lineHeight: 1.5 }}>
-              Evaluates functional pairings like Bed + Nightstand, Desk + Chair, and Sofa + Coffee Table for harmonious living.
+              Coordinates spatial groupings like Dining Tables + Chairs, Bed + Nightstand, and Sofa + Coffee Table.
             </p>
           </div>
         </div>
@@ -305,7 +303,7 @@ function Home() {
         color: "var(--text-muted)",
         fontSize: "13px"
       }}>
-        RoomCraft • AI-Powered Room Layout Optimization Engine
+        RoomCraft • Architectural BIM & AI Layout Studio
       </footer>
     </div>
   );

@@ -43,7 +43,6 @@ function LayoutView() {
         setIsLoading(true);
         setError("");
 
-        // 1. Hydrate Room metadata (first try session, fallback to API)
         let roomData = null;
         const storedRoom = sessionStorage.getItem("roomcraft-current-room");
         if (storedRoom) {
@@ -64,12 +63,10 @@ function LayoutView() {
 
         setRoom(roomData);
 
-        // 2. Fetch Generated Layouts
         const layoutsRes = await getRoomLayouts(roomId);
         const layouts = layoutsRes.layouts || [];
         setGeneratedLayouts(layouts);
 
-        // 3. Auto-select confirmed layout if present
         if (roomData?.selectedLayoutId) {
           const matchIdx = layouts.findIndex((l) => l._id === roomData.selectedLayoutId);
           if (matchIdx !== -1) {
@@ -98,10 +95,9 @@ function LayoutView() {
       const layout = generatedLayouts[selectedIndex];
       const res = await confirmLayout(roomId, layout._id);
 
-      // Confetti celebration
       confetti({
-        particleCount: 100,
-        spread: 70,
+        particleCount: 120,
+        spread: 80,
         origin: { y: 0.6 }
       });
 
@@ -112,7 +108,7 @@ function LayoutView() {
 
       setRoom(updated);
       sessionStorage.setItem("roomcraft-current-room", JSON.stringify(updated));
-      setSuccess(`Layout #${selectedIndex + 1} confirmed as your primary room arrangement!`);
+      setSuccess(`Layout Option #${selectedIndex + 1} confirmed as your authoritative room layout!`);
     } catch (err) {
       console.error("Confirmation error:", err);
       setError(err.message || "Failed to confirm layout.");
@@ -132,7 +128,7 @@ function LayoutView() {
       const layoutsRes = await getRoomLayouts(roomId);
       setGeneratedLayouts(layoutsRes.layouts || []);
       setSelectedIndex(0);
-      setSuccess("Generated a fresh batch of Pareto-optimal arrangements!");
+      setSuccess("Generated 8 diverse spatial layout options!");
     } catch (err) {
       console.error("Regeneration error:", err);
       setError(err.message || "Failed to re-generate layouts.");
@@ -146,10 +142,10 @@ function LayoutView() {
       <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "var(--bg-primary)" }}>
         <Navbar />
         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px" }}>
-          <Sparkles size={36} color="#6366f1" className="pulse-glow" />
-          <h2 style={{ fontSize: "20px" }}>Evaluating Evolutionary Generations...</h2>
+          <Sparkles size={36} color="#b47b48" className="pulse-glow" />
+          <h2 style={{ fontSize: "20px" }}>Synthesizing Distinct Spatial Archetypes...</h2>
           <p style={{ color: "var(--text-muted)", fontSize: "14px" }}>
-            Extracting non-dominated Pareto front candidates
+            Extracting non-dominated Pareto front candidates with zero collisions
           </p>
         </div>
       </div>
@@ -161,7 +157,7 @@ function LayoutView() {
       <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "var(--bg-primary)" }}>
         <Navbar />
         <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px" }}>
-          <AlertCircle size={40} color="#f43f5e" />
+          <AlertCircle size={40} color="#e11d48" />
           <h2 style={{ fontSize: "22px" }}>Room Unavailable</h2>
           <p style={{ color: "var(--text-secondary)", fontSize: "14px", maxWidth: "450px", textAlign: "center" }}>
             {error}
@@ -203,7 +199,7 @@ function LayoutView() {
                 Room {room?.width} × {room?.height} cm
               </span>
             </div>
-            <h1 style={{ fontSize: "28px", marginTop: "4px" }}>Pareto Generated Layouts</h1>
+            <h1 style={{ fontSize: "28px", marginTop: "4px" }}>Generated Layout Options</h1>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -213,7 +209,7 @@ function LayoutView() {
               background: "var(--bg-input)",
               padding: "4px",
               borderRadius: "var(--radius-md)",
-              border: "1px solid var(--border-medium)"
+              border: "1px solid var(--border-subtle)"
             }}>
               <button
                 type="button"
@@ -225,9 +221,10 @@ function LayoutView() {
                   padding: "6px 14px",
                   borderRadius: "var(--radius-sm)",
                   fontSize: "13px",
-                  fontWeight: 600,
-                  background: viewMode === "2d" ? "var(--primary)" : "transparent",
-                  color: viewMode === "2d" ? "#ffffff" : "var(--text-secondary)"
+                  fontWeight: 700,
+                  background: viewMode === "2d" ? "#ffffff" : "transparent",
+                  color: viewMode === "2d" ? "var(--primary)" : "var(--text-secondary)",
+                  boxShadow: viewMode === "2d" ? "var(--shadow-sm)" : "none"
                 }}
               >
                 <Eye size={15} />
@@ -244,13 +241,14 @@ function LayoutView() {
                   padding: "6px 14px",
                   borderRadius: "var(--radius-sm)",
                   fontSize: "13px",
-                  fontWeight: 600,
-                  background: viewMode === "3d" ? "linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)" : "transparent",
-                  color: viewMode === "3d" ? "#ffffff" : "var(--text-secondary)"
+                  fontWeight: 700,
+                  background: viewMode === "3d" ? "linear-gradient(135deg, #b47b48 0%, #9c6536 100%)" : "transparent",
+                  color: viewMode === "3d" ? "#ffffff" : "var(--text-secondary)",
+                  boxShadow: viewMode === "3d" ? "var(--shadow-sm)" : "none"
                 }}
               >
                 <Box size={15} />
-                <span>3D Orbit View</span>
+                <span>3D BIM Orbit View</span>
               </button>
             </div>
 
@@ -274,10 +272,10 @@ function LayoutView() {
             alignItems: "center",
             gap: "10px",
             padding: "12px 16px",
-            background: "rgba(244, 63, 94, 0.15)",
-            border: "1px solid rgba(244, 63, 94, 0.4)",
+            background: "rgba(225, 29, 72, 0.1)",
+            border: "1px solid rgba(225, 29, 72, 0.3)",
             borderRadius: "var(--radius-md)",
-            color: "#fda4af",
+            color: "#be123c",
             fontSize: "14px",
             marginBottom: "20px"
           }}>
@@ -292,10 +290,10 @@ function LayoutView() {
             alignItems: "center",
             gap: "10px",
             padding: "12px 16px",
-            background: "rgba(16, 185, 129, 0.15)",
-            border: "1px solid rgba(16, 185, 129, 0.4)",
+            background: "rgba(5, 150, 105, 0.1)",
+            border: "1px solid rgba(5, 150, 105, 0.3)",
             borderRadius: "var(--radius-md)",
-            color: "#6ee7b7",
+            color: "#047857",
             fontSize: "14px",
             marginBottom: "20px"
           }}>
@@ -304,14 +302,14 @@ function LayoutView() {
           </div>
         )}
 
-        {/* Layout Selection Carousel / Grid */}
+        {/* Layout Selection Grid */}
         <div style={{ marginBottom: "28px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-            <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              Select Candidate Layout ({generatedLayouts.length} Generated)
+            <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              Distinct Layout Archetypes ({generatedLayouts.length} Options)
             </span>
             <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-              Sorted by Pareto Dominance & Diversity
+              Optimized for Spatial Diversity & Zero Collisions
             </span>
           </div>
 
@@ -337,21 +335,21 @@ function LayoutView() {
                     padding: "16px",
                     borderRadius: "var(--radius-md)",
                     border: isSelected
-                      ? "2px solid #6366f1"
+                      ? "2px solid #b47b48"
                       : isItemConfirmed
-                      ? "1.5px solid #f59e0b"
+                      ? "1.5px solid #d97706"
                       : "1px solid var(--border-subtle)",
                     boxShadow: isSelected
-                      ? "0 0 20px rgba(99, 102, 241, 0.35)"
-                      : "none",
+                      ? "0 4px 16px rgba(180, 123, 72, 0.25)"
+                      : "var(--shadow-sm)",
                     cursor: "pointer",
                     transition: "all 0.2s ease",
                     position: "relative",
-                    background: isSelected ? "rgba(30, 41, 59, 0.95)" : "rgba(17, 24, 39, 0.75)"
+                    background: isSelected ? "#fcfaf7" : "#ffffff"
                   }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                    <span style={{ fontSize: "15px", fontWeight: 700, color: "#ffffff" }}>
+                    <span style={{ fontSize: "15px", fontWeight: 700, color: "var(--text-primary)" }}>
                       Option #{idx + 1}
                     </span>
 
@@ -368,16 +366,16 @@ function LayoutView() {
 
                   {/* 4 Score Indicators in mini-chips */}
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", fontSize: "11px" }}>
-                    <div style={{ padding: "4px 6px", background: "rgba(99, 102, 241, 0.1)", borderRadius: "4px", color: "#a5b4fc" }}>
+                    <div style={{ padding: "4px 6px", background: "rgba(180, 123, 72, 0.08)", borderRadius: "4px", color: "#9c6536", fontWeight: 600 }}>
                       Traffic: {Math.round((layout.scores?.trafficFlow ?? 0) * 100)}%
                     </div>
-                    <div style={{ padding: "4px 6px", background: "rgba(6, 182, 212, 0.1)", borderRadius: "4px", color: "#67e8f9" }}>
+                    <div style={{ padding: "4px 6px", background: "rgba(2, 132, 199, 0.08)", borderRadius: "4px", color: "#0284c7", fontWeight: 600 }}>
                       Light: {Math.round((layout.scores?.lightExposure ?? 0) * 100)}%
                     </div>
-                    <div style={{ padding: "4px 6px", background: "rgba(16, 185, 129, 0.1)", borderRadius: "4px", color: "#6ee7b7" }}>
+                    <div style={{ padding: "4px 6px", background: "rgba(5, 150, 105, 0.08)", borderRadius: "4px", color: "#059669", fontWeight: 600 }}>
                       Clear: {Math.round((layout.scores?.clearance ?? 0) * 100)}%
                     </div>
-                    <div style={{ padding: "4px 6px", background: "rgba(245, 158, 11, 0.1)", borderRadius: "4px", color: "#fde68a" }}>
+                    <div style={{ padding: "4px 6px", background: "rgba(217, 119, 6, 0.08)", borderRadius: "4px", color: "#d97706", fontWeight: 600 }}>
                       Cluster: {Math.round((layout.scores?.clustering ?? 0) * 100)}%
                     </div>
                   </div>
@@ -418,7 +416,7 @@ function LayoutView() {
             <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
               <div className="glass-panel" style={{ padding: "20px" }}>
                 <h3 style={{ fontSize: "16px", marginBottom: "16px" }}>
-                  Layout #{selectedIndex + 1} Metrics
+                  Option #{selectedIndex + 1} Metrics
                 </h3>
 
                 <ScoreBreakdown scores={selectedLayout.scores} />
@@ -440,7 +438,7 @@ function LayoutView() {
                       <span>Saving Confirmation...</span>
                     ) : isConfirmed ? (
                       <>
-                        <CheckCircle2 size={18} color="#10b981" />
+                        <CheckCircle2 size={18} color="#059669" />
                         <span>Confirmed Arrangement</span>
                       </>
                     ) : (

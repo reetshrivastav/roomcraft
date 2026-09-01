@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Sparkles, Plus, Trash2, Sliders, CheckCircle2,
-  Layers, DoorOpen, Sun, Search, AlertCircle, ArrowRight
+import { 
+  Sparkles, Plus, Minus, Trash2, Sliders, CheckCircle2, 
+  Layers, DoorOpen, Sun, Search, AlertCircle, ArrowRight, Utensils 
 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import RoomCanvas from "../components/RoomCanvas";
@@ -81,7 +81,6 @@ function RoomSetup() {
     setRoom(prev => {
       const updated = [...prev.doors];
       const door = { ...updated[index], [field]: field === "wall" ? value : Number(value) };
-      // Align coordinates to wall
       if (field === "wall") {
         if (value === "top" || value === "bottom") {
           door.x = Math.min(door.x || 100, prev.width);
@@ -129,14 +128,31 @@ function RoomSetup() {
     });
   };
 
-  // Furniture selection
-  const toggleFurniture = (furnitureId) => {
+  // Quantity Management for furniture
+  const getItemCount = (id) => {
+    return room.furnitureSelection.filter(item => item === id).length;
+  };
+
+  const setItemCount = (id, count) => {
+    const clampedCount = Math.max(0, Math.min(8, count));
     setRoom(prev => {
-      const exists = prev.furnitureSelection.includes(furnitureId);
-      const updated = exists
-        ? prev.furnitureSelection.filter(id => id !== furnitureId)
-        : [...prev.furnitureSelection, furnitureId];
-      return { ...prev, furnitureSelection: updated };
+      const otherItems = prev.furnitureSelection.filter(item => item !== id);
+      const newDuplicates = Array(clampedCount).fill(id);
+      return { ...prev, furnitureSelection: [...otherItems, ...newDuplicates] };
+    });
+  };
+
+  // Helper for 2, 4, 6 Dining Sets
+  const addDiningSet = (chairCount = 4) => {
+    setRoom(prev => {
+      const withoutDining = prev.furnitureSelection.filter(
+        id => id !== "dining-table" && id !== "dining-chair"
+      );
+      const chairs = Array(chairCount).fill("dining-chair");
+      return {
+        ...prev,
+        furnitureSelection: [...withoutDining, "dining-table", ...chairs]
+      };
     });
   };
 
@@ -160,7 +176,6 @@ function RoomSetup() {
     try {
       setIsSubmitting(true);
 
-      // 1. Create room
       const roomResponse = await createRoom(room);
       const roomId = roomResponse.room?._id;
 
@@ -168,13 +183,8 @@ function RoomSetup() {
         throw new Error("Failed to obtain room ID from backend.");
       }
 
-      // 2. Trigger genetic algorithm generation
       await generateLayouts(roomId);
-
-      // 3. Cache current room in session for rapid hydration
       sessionStorage.setItem("roomcraft-current-room", JSON.stringify(roomResponse.room));
-
-      // 4. Navigate cleanly with React Router
       navigate(`/layout?roomId=${roomId}`);
     } catch (err) {
       console.error("Room setup failed:", err);
@@ -192,11 +202,11 @@ function RoomSetup() {
         {/* Page Header */}
         <div style={{ marginBottom: "28px" }}>
           <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--primary)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-            Room Architecture & Furniture Builder
+            BIM Architectural Studio
           </span>
-          <h1 style={{ fontSize: "32px", margin: "4px 0 8px" }}>Configure Your Space</h1>
+          <h1 style={{ fontSize: "32px", margin: "4px 0 8px" }}>Configure Room & Furniture</h1>
           <p style={{ color: "var(--text-secondary)", fontSize: "15px" }}>
-            Set room dimensions, door openings, window positions, and select furniture pieces for evolutionary optimization.
+            Set exact dimensions, door openings, sunlight windows, and choose furniture with custom quantities (e.g. Dining Sets with 2, 4, 6 chairs).
           </p>
         </div>
 
@@ -206,10 +216,10 @@ function RoomSetup() {
             alignItems: "center",
             gap: "10px",
             padding: "12px 16px",
-            background: "rgba(244, 63, 94, 0.15)",
-            border: "1px solid rgba(244, 63, 94, 0.4)",
+            background: "rgba(225, 29, 72, 0.1)",
+            border: "1px solid rgba(225, 29, 72, 0.3)",
             borderRadius: "var(--radius-md)",
-            color: "#fda4af",
+            color: "#be123c",
             fontSize: "14px",
             marginBottom: "24px"
           }}>
@@ -224,7 +234,7 @@ function RoomSetup() {
             {/* Dimensions Card */}
             <div className="glass-panel" style={{ padding: "20px" }}>
               <h3 style={{ fontSize: "16px", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
-                <Sliders size={18} color="#6366f1" />
+                <Sliders size={18} color="#b47b48" />
                 <span>1. Room Dimensions (cm)</span>
               </h3>
 
@@ -265,7 +275,7 @@ function RoomSetup() {
             <div className="glass-panel" style={{ padding: "20px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
                 <h3 style={{ fontSize: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
-                  <DoorOpen size={18} color="#f59e0b" />
+                  <DoorOpen size={18} color="#b47b48" />
                   <span>2. Doors & Openings ({room.doors.length})</span>
                 </h3>
                 <button
@@ -321,7 +331,7 @@ function RoomSetup() {
                       <button
                         type="button"
                         onClick={() => removeDoor(idx)}
-                        style={{ color: "#f43f5e", background: "transparent" }}
+                        style={{ color: "#e11d48", background: "transparent" }}
                       >
                         <Trash2 size={16} />
                       </button>
@@ -333,7 +343,7 @@ function RoomSetup() {
               {/* Windows Section */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
                 <h3 style={{ fontSize: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
-                  <Sun size={18} color="#06b6d4" />
+                  <Sun size={18} color="#0284c7" />
                   <span>3. Windows & Sunlight ({room.windows.length})</span>
                 </h3>
                 <button
@@ -389,7 +399,7 @@ function RoomSetup() {
                       <button
                         type="button"
                         onClick={() => removeWindow(idx)}
-                        style={{ color: "#f43f5e", background: "transparent" }}
+                        style={{ color: "#e11d48", background: "transparent" }}
                       >
                         <Trash2 size={16} />
                       </button>
@@ -399,19 +409,19 @@ function RoomSetup() {
               </div>
             </div>
 
-            {/* Furniture Catalog Selection Card */}
+            {/* Furniture Catalog Selection Card with Multi-Quantity */}
             <div className="glass-panel" style={{ padding: "20px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
                 <h3 style={{ fontSize: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
-                  <Layers size={18} color="#10b981" />
-                  <span>4. Furniture Items ({room.furnitureSelection.length} Selected)</span>
+                  <Layers size={18} color="#059669" />
+                  <span>4. Furniture Selection ({room.furnitureSelection.length} Items)</span>
                 </h3>
 
-                <div style={{ position: "relative", width: "160px" }}>
+                <div style={{ position: "relative", width: "150px" }}>
                   <Search size={14} style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
                   <input
                     type="text"
-                    placeholder="Search..."
+                    placeholder="Filter..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="form-input"
@@ -420,8 +430,47 @@ function RoomSetup() {
                 </div>
               </div>
 
+              {/* Quick Dining Set Helper Buttons */}
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                marginBottom: "14px",
+                padding: "8px 12px",
+                background: "rgba(180, 123, 72, 0.08)",
+                borderRadius: "var(--radius-md)",
+                border: "1px dashed rgba(180, 123, 72, 0.3)"
+              }}>
+                <Utensils size={15} color="#b47b48" />
+                <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-primary)" }}>Dining Sets:</span>
+                <button
+                  type="button"
+                  onClick={() => addDiningSet(2)}
+                  className="btn-secondary"
+                  style={{ padding: "3px 8px", fontSize: "11px" }}
+                >
+                  Table + 2 Chairs
+                </button>
+                <button
+                  type="button"
+                  onClick={() => addDiningSet(4)}
+                  className="btn-secondary"
+                  style={{ padding: "3px 8px", fontSize: "11px" }}
+                >
+                  Table + 4 Chairs
+                </button>
+                <button
+                  type="button"
+                  onClick={() => addDiningSet(6)}
+                  className="btn-secondary"
+                  style={{ padding: "3px 8px", fontSize: "11px" }}
+                >
+                  Table + 6 Chairs
+                </button>
+              </div>
+
               {/* Category Filter Chips */}
-              <div style={{ display: "flex", gap: "6px", overflowX: "auto", paddingBottom: "12px", marginBottom: "12px" }}>
+              <div style={{ display: "flex", gap: "6px", overflowX: "auto", paddingBottom: "10px", marginBottom: "12px" }}>
                 {CATEGORIES.map(cat => (
                   <button
                     key={cat.id}
@@ -431,7 +480,7 @@ function RoomSetup() {
                       padding: "4px 10px",
                       borderRadius: "var(--radius-full)",
                       fontSize: "12px",
-                      fontWeight: 500,
+                      fontWeight: 600,
                       background: selectedCategory === cat.id ? "var(--primary)" : "var(--bg-input)",
                       color: selectedCategory === cat.id ? "#ffffff" : "var(--text-secondary)",
                       border: "1px solid " + (selectedCategory === cat.id ? "transparent" : "var(--border-subtle)"),
@@ -443,48 +492,92 @@ function RoomSetup() {
                 ))}
               </div>
 
-              {/* Furniture List */}
+              {/* Furniture List with Quantity Counters */}
               <div style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
                 gap: "10px",
-                maxHeight: "320px",
+                maxHeight: "340px",
                 overflowY: "auto",
                 paddingRight: "6px"
               }}>
                 {filteredCatalog.map(item => {
-                  const isSelected = room.furnitureSelection.includes(item.id);
+                  const count = getItemCount(item.id);
+                  const isSelected = count > 0;
 
                   return (
                     <div
                       key={item.id}
-                      onClick={() => toggleFurniture(item.id)}
                       style={{
                         display: "flex",
                         flexDirection: "column",
                         justifyContent: "space-between",
                         padding: "10px",
                         borderRadius: "var(--radius-md)",
-                        background: isSelected ? "rgba(99, 102, 241, 0.18)" : "var(--bg-input)",
+                        background: isSelected ? "rgba(180, 123, 72, 0.12)" : "var(--bg-input)",
                         border: "1.5px solid " + (isSelected ? "var(--primary)" : "var(--border-subtle)"),
-                        cursor: "pointer",
                         transition: "all 0.15s ease"
                       }}
                     >
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                        <span style={{ fontSize: "13px", fontWeight: 600, color: "#ffffff" }}>
+                        <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-primary)" }}>
                           {item.name}
                         </span>
-                        {isSelected && <CheckCircle2 size={16} color="#6366f1" />}
+                        {isSelected && (
+                          <span style={{ fontSize: "11px", fontWeight: 700, color: "#b47b48" }}>
+                            ×{count}
+                          </span>
+                        )}
                       </div>
 
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "8px", fontSize: "11px", color: "var(--text-muted)" }}>
-                        <span style={{ fontFamily: "var(--font-mono)" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "8px" }}>
+                        <span style={{ fontSize: "11px", fontFamily: "var(--font-mono)", color: "var(--text-muted)" }}>
                           {item.width}×{item.depth} cm
                         </span>
-                        <span style={{ textTransform: "capitalize", color: "#a5b4fc" }}>
-                          {item.category}
-                        </span>
+
+                        {/* Quantity Counter */}
+                        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                          <button
+                            type="button"
+                            onClick={() => setItemCount(item.id, count - 1)}
+                            disabled={count === 0}
+                            style={{
+                              width: "22px",
+                              height: "22px",
+                              borderRadius: "4px",
+                              background: count > 0 ? "var(--bg-card)" : "transparent",
+                              border: "1px solid var(--border-subtle)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: "var(--text-primary)"
+                            }}
+                          >
+                            <Minus size={12} />
+                          </button>
+
+                          <span style={{ fontSize: "12px", fontWeight: 700, minWidth: "16px", textAlign: "center" }}>
+                            {count}
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() => setItemCount(item.id, count + 1)}
+                            style={{
+                              width: "22px",
+                              height: "22px",
+                              borderRadius: "4px",
+                              background: "var(--bg-card)",
+                              border: "1px solid var(--border-subtle)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: "var(--primary)"
+                            }}
+                          >
+                            <Plus size={12} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -507,7 +600,7 @@ function RoomSetup() {
               {isSubmitting ? (
                 <>
                   <Sparkles size={20} className="pulse-glow" />
-                  <span>Running Genetic Algorithm (20 Generations)...</span>
+                  <span>Generating Distinct Spatial Archetypes...</span>
                 </>
               ) : (
                 <>
@@ -524,9 +617,9 @@ function RoomSetup() {
             <div className="glass-panel" style={{ padding: "20px", display: "flex", flexDirection: "column", alignItems: "center" }}>
               <div style={{ display: "flex", justifyContent: "space-between", width: "100%", marginBottom: "16px", alignItems: "center" }}>
                 <div>
-                  <h3 style={{ fontSize: "16px" }}>Real-Time Floorplan Blueprint</h3>
+                  <h3 style={{ fontSize: "16px" }}>Real-Time 2D Floorplan</h3>
                   <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-                    Updates live with doors, windows, and dimensions
+                    Updates live with doors, windows, and perimeter dimensions
                   </span>
                 </div>
 

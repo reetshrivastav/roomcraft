@@ -7,37 +7,37 @@ function ScoreBreakdown({ scores = {} }) {
       label: "Traffic Flow",
       score: scores.trafficFlow ?? 0,
       icon: Footprints,
-      color: "#6366f1",
-      description: "Accessibility of walking corridors between doors and central room movement pathways."
+      color: "#b47b48",
+      description: "Unobstructed entry corridors between doorways and central movement paths."
     },
     {
       key: "lightExposure",
       label: "Light Exposure",
       score: scores.lightExposure ?? 0,
       icon: Sun,
-      color: "#06b6d4",
-      description: "Optimal placement relative to windows (rewards desks near natural light, shields bookshelves)."
+      color: "#0284c7",
+      description: "Natural sunlight alignment for desks while shielding storage from direct glare."
     },
     {
       key: "clearance",
       label: "Clearance & Walls",
       score: scores.clearance ?? 0,
       icon: ShieldCheck,
-      color: "#10b981",
-      description: "Zero furniture overlap, adequate spacing halos, unobstructed doors, and wall alignment."
+      color: "#059669",
+      description: "Zero furniture collision, 70cm doorway swing clearance, and wall alignment."
     },
     {
       key: "clustering",
       label: "Functional Clustering",
       score: scores.clustering ?? 0,
       icon: Grid,
-      color: "#f59e0b",
-      description: "Harmonious grouping of complementary furniture (Bed + Nightstand, Desk + Chair, Sofa + Table)."
+      color: "#d97706",
+      description: "Harmonious grouping of complementary items (Table + Chairs, Bed + Nightstand)."
     }
   ];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
       {metrics.map((metric) => {
         const Icon = metric.icon;
         const percentage = Math.round(metric.score * 100);
@@ -49,7 +49,7 @@ function ScoreBreakdown({ scores = {} }) {
               display: "flex",
               flexDirection: "column",
               gap: "6px",
-              background: "rgba(15, 23, 42, 0.6)",
+              background: "var(--bg-input)",
               padding: "12px 14px",
               borderRadius: "var(--radius-md)",
               border: "1px solid var(--border-subtle)"
@@ -60,7 +60,7 @@ function ScoreBreakdown({ scores = {} }) {
                 <div style={{
                   padding: "5px",
                   borderRadius: "6px",
-                  background: `${metric.color}20`,
+                  background: `${metric.color}15`,
                   color: metric.color,
                   display: "flex"
                 }}>
@@ -85,7 +85,7 @@ function ScoreBreakdown({ scores = {} }) {
             <div style={{
               width: "100%",
               height: "6px",
-              background: "rgba(255, 255, 255, 0.08)",
+              background: "rgba(0, 0, 0, 0.06)",
               borderRadius: "var(--radius-full)",
               overflow: "hidden"
             }}>
