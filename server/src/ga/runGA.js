@@ -11,6 +11,33 @@ const {
   getParetoFront
 } = require("./paretoFront");
 
+function areChromosomesSimilar(chromA, chromB, threshold = 20) {
+  if (chromA.length !== chromB.length) return false;
+  for (let i = 0; i < chromA.length; i++) {
+    const gA = chromA[i];
+    const gB = chromB[i];
+    if (gA.furnitureId !== gB.furnitureId) return false;
+    if (gA.rotation !== gB.rotation) return false;
+    if (Math.abs(gA.x - gB.x) > threshold || Math.abs(gA.y - gB.y) > threshold) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function deduplicateCandidates(candidates) {
+  const unique = [];
+  for (const candidate of candidates) {
+    const isDuplicate = unique.some((existing) =>
+      areChromosomesSimilar(existing.chromosome, candidate.chromosome)
+    );
+    if (!isDuplicate) {
+      unique.push(candidate);
+    }
+  }
+  return unique;
+}
+
 /**
  * Run the genetic algorithm for multiple generations.
  *
@@ -30,94 +57,63 @@ function runGeneticAlgorithm(room, options = {}) {
   }
 
   if (populationSize < 2) {
-    throw new Error(
-      "Population size must be at least 2."
-    );
+    throw new Error("Population size must be at least 2.");
   }
 
   if (generations < 1) {
-    throw new Error(
-      "Number of generations must be at least 1."
-    );
+    throw new Error("Number of generations must be at least 1.");
   }
 
-  if (
-    parentCount < 2 ||
-    parentCount > populationSize
-  ) {
-    throw new Error(
-      "Parent count must be between 2 and population size."
-    );
+  if (parentCount < 2 || parentCount > populationSize) {
+    throw new Error("Parent count must be between 2 and population size.");
   }
 
-  // -------------------------
-  // Generation 0
-  // -------------------------
+  let population = createFirstGeneration(room, populationSize);
+  let allEvaluatedCandidates = [];
 
-  let population =
-    createFirstGeneration(
-      room,
-      populationSize
-    );
+  for (let generation = 0; generation < generations; generation++) {
+    const evaluated = evaluatePopulation(room, population);
+    allEvaluatedCandidates.push(...evaluated);
 
-  let bestParetoFront = [];
-
-  // -------------------------
-  // Evolution loop
-  // -------------------------
-
-  for (
-    let generation = 0;
-    generation < generations;
-    generation++
-  ) {
-    // Evaluate current population
-    const evaluated =
-      evaluatePopulation(
-        room,
-        population
-      );
-
-    // Find current Pareto front
-    const paretoFront =
-      getParetoFront(evaluated);
-
-    // Keep the best Pareto front seen so far.
-    //
-    // For now we simply replace it with the
-    // current generation's front.
-    bestParetoFront = paretoFront;
-
-    // No need to create another generation
-    // after the final iteration.
     if (generation === generations - 1) {
       break;
     }
 
-    // Create next generation
-    const result =
-      createNextGeneration(
-        room,
-        population,
-        {
-          parentCount,
-          childCount: populationSize,
-          mutationRate,
-          positionMutationAmount
-        }
-      );
+    const result = createNextGeneration(room, population, {
+      parentCount,
+      childCount: populationSize,
+      mutationRate,
+      positionMutationAmount
+    });
 
-    population =
-      result.nextGeneration;
+    population = result.nextGeneration;
+  }
+
+  // Extract non-dominated solutions across all evaluated generations
+  const uniqueCandidates = deduplicateCandidates(allEvaluatedCandidates, 35);
+  const globalParetoFront = getParetoFront(uniqueCandidates);
+
+  // Return deduplicated final Pareto front, capped at max 8 most distinct high-quality layouts
+  let finalParetoFront = deduplicateCandidates(globalParetoFront, 40);
+
+  if (finalParetoFront.length > 8) {
+    // Sort by diversity/average score and pick top 8
+    finalParetoFront.sort((a, b) => {
+      const avgA = (a.scores.trafficFlow + a.scores.lightExposure + a.scores.clearance + a.scores.clustering) / 4;
+      const avgB = (b.scores.trafficFlow + b.scores.lightExposure + b.scores.clearance + b.scores.clustering) / 4;
+      return avgB - avgA;
+    });
+    finalParetoFront = finalParetoFront.slice(0, 8);
   }
 
   return {
     generations,
     populationSize,
-    paretoFront: bestParetoFront
+    paretoFront: finalParetoFront.length > 0 ? finalParetoFront : globalParetoFront.slice(0, 1)
   };
 }
 
 module.exports = {
-  runGeneticAlgorithm
+  runGeneticAlgorithm,
+  deduplicateCandidates
 };

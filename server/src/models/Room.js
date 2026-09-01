@@ -94,6 +94,8 @@ const roomSchema = new mongoose.Schema(
   }
 );
 
+roomSchema.index({ userId: 1 });
+
 module.exports = mongoose.model(
   "Room",
   roomSchema

@@ -14,6 +14,21 @@ function randomRotation() {
   ];
 }
 
+const furnitureCatalog = require("../../../furnitureCatalog.json");
+const furnitureMap = new Map(furnitureCatalog.map((item) => [item.id, item]));
+
+function getFurnitureBounds(furnitureId, rotation) {
+  const item = furnitureMap.get(furnitureId);
+  if (!item) {
+    return { width: 50, depth: 50 };
+  }
+  const isRotated = rotation === 90 || rotation === 270;
+  return {
+    width: isRotated ? item.depth : item.width,
+    depth: isRotated ? item.width : item.depth
+  };
+}
+
 function createRandomChromosome(room) {
   if (!room || typeof room !== "object") {
     throw new Error("Room is required.");
@@ -40,17 +55,14 @@ function createRandomChromosome(room) {
   }
 
   return room.furnitureSelection.map((furnitureId) => {
-    const x = randomNumber(
-      0,
-      Math.max(0, room.width - 1)
-    );
-
-    const y = randomNumber(
-      0,
-      Math.max(0, room.height - 1)
-    );
-
     const rotation = randomRotation();
+    const bounds = getFurnitureBounds(furnitureId, rotation);
+
+    const maxX = Math.max(0, room.width - bounds.width);
+    const maxY = Math.max(0, room.height - bounds.depth);
+
+    const x = randomNumber(0, maxX);
+    const y = randomNumber(0, maxY);
 
     return createGene(
       furnitureId,

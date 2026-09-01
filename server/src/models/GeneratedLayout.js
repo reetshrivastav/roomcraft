@@ -89,6 +89,8 @@ const generatedLayoutSchema = new mongoose.Schema(
   }
 );
 
+generatedLayoutSchema.index({ roomId: 1 });
+
 module.exports = mongoose.model(
   "GeneratedLayout",
   generatedLayoutSchema

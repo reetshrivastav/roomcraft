@@ -1,395 +1,461 @@
 import { useEffect, useState } from "react";
-
-import RoomCanvas from "../components/RoomCanvas";
-import furnitureCatalog from "../furnitureCatalog.json";
-
+import { useLocation, useNavigate, Link } from "react-router-dom";
+import confetti from "canvas-confetti";
 import {
-  getRoomLayouts,
-  confirmLayout,
-} from "../services/room";
+  Sparkles, CheckCircle2, Layers, Compass, ArrowLeft,
+  RotateCw, Share2, Box, Eye, Check, AlertCircle
+} from "lucide-react";
+import Navbar from "../components/Navbar";
+import RoomCanvas from "../components/RoomCanvas";
+import Room3DView from "../components/Room3DView";
+import ScoreBreakdown from "../components/ScoreBreakdown";
+import furnitureCatalog from "../furnitureCatalog.json";
+import { getRoom, getRoomLayouts, confirmLayout, generateLayouts } from "../services/room";
 
 function LayoutView() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const [room, setRoom] = useState(null);
   const [generatedLayouts, setGeneratedLayouts] = useState([]);
-  const [selectedLayoutIndex, setSelectedLayoutIndex] = useState(0);
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
+  const [viewMode, setViewMode] = useState("2d"); // "2d" | "3d"
   const [isLoading, setIsLoading] = useState(true);
   const [isConfirming, setIsConfirming] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  const params = new URLSearchParams(location.search);
+  const roomId = params.get("roomId");
+
   useEffect(() => {
-    const loadLayouts = async () => {
+    const initData = async () => {
+      if (!roomId) {
+        setError("No room ID provided.");
+        setIsLoading(false);
+        return;
+      }
+
       try {
         setIsLoading(true);
         setError("");
-        setSuccess("");
 
-        const params = new URLSearchParams(window.location.search);
-        const roomId = params.get("roomId");
-
-        if (!roomId) {
-          throw new Error("No room ID was provided.");
+        // 1. Hydrate Room metadata (first try session, fallback to API)
+        let roomData = null;
+        const storedRoom = sessionStorage.getItem("roomcraft-current-room");
+        if (storedRoom) {
+          try {
+            const parsed = JSON.parse(storedRoom);
+            if (parsed._id === roomId) {
+              roomData = parsed;
+            }
+          } catch (e) {
+            console.error("Session parse failed", e);
+          }
         }
 
-        console.log("Loading layouts for room:", roomId);
-
-        /*
-         * Load room information from sessionStorage.
-         */
-        const storedRoom = sessionStorage.getItem(
-          "roomcraft-current-room"
-        );
-
-        if (!storedRoom) {
-          throw new Error(
-            "Room information could not be found."
-          );
-        }
-
-        const roomData = JSON.parse(storedRoom);
-
-        if (roomData._id !== roomId) {
-          throw new Error(
-            "Stored room does not match the requested room."
-          );
+        if (!roomData) {
+          const fetched = await getRoom(roomId);
+          roomData = fetched.room;
         }
 
         setRoom(roomData);
 
-        /*
-         * Fetch the actual generated layouts
-         * from the backend.
-         */
-        const response = await getRoomLayouts(roomId);
-
-        console.log(
-          "Fetched generated layouts:",
-          response
-        );
-
-        const layouts = response.layouts || [];
-
+        // 2. Fetch Generated Layouts
+        const layoutsRes = await getRoomLayouts(roomId);
+        const layouts = layoutsRes.layouts || [];
         setGeneratedLayouts(layouts);
 
-        /*
-         * If the room already has a confirmed layout,
-         * automatically select it.
-         */
-        if (roomData.selectedLayoutId) {
-          const confirmedIndex = layouts.findIndex(
-            (layout) =>
-              layout._id === roomData.selectedLayoutId
-          );
-
-          if (confirmedIndex !== -1) {
-            setSelectedLayoutIndex(confirmedIndex);
+        // 3. Auto-select confirmed layout if present
+        if (roomData?.selectedLayoutId) {
+          const matchIdx = layouts.findIndex((l) => l._id === roomData.selectedLayoutId);
+          if (matchIdx !== -1) {
+            setSelectedIndex(matchIdx);
           }
         }
       } catch (err) {
-        console.error(
-          "Failed to load layouts:",
-          err
-        );
-
-        setError(
-          err.message ||
-            "Failed to load generated layouts."
-        );
+        console.error("Failed to load layout data:", err);
+        setError(err.message || "Failed to fetch room or layout data.");
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadLayouts();
-  }, []);
+    initData();
+  }, [roomId]);
 
-  const handleSelectLayout = (index) => {
-    setSelectedLayoutIndex(index);
-    setError("");
-    setSuccess("");
-  };
+  const handleConfirm = async () => {
+    if (!roomId || !generatedLayouts[selectedIndex]) return;
 
-  const handleConfirmLayout = async () => {
     try {
+      setIsConfirming(true);
       setError("");
       setSuccess("");
-      setIsConfirming(true);
 
-      const params = new URLSearchParams(
-        window.location.search
-      );
+      const layout = generatedLayouts[selectedIndex];
+      const res = await confirmLayout(roomId, layout._id);
 
-      const roomId = params.get("roomId");
+      // Confetti celebration
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
 
-      if (!roomId) {
-        throw new Error(
-          "No room ID was provided."
-        );
-      }
-
-      const selectedLayout =
-        generatedLayouts[selectedLayoutIndex];
-
-      if (!selectedLayout?._id) {
-        throw new Error(
-          "Selected layout has no ID."
-        );
-      }
-
-      /*
-       * Confirm the selected layout through the backend.
-       */
-      const response = await confirmLayout(
-        roomId,
-        selectedLayout._id
-      );
-
-      console.log(
-        "Layout confirmed:",
-        response
-      );
-
-      /*
-       * Update local room state.
-       */
-      const updatedRoom = {
+      const updated = {
         ...room,
-        selectedLayoutId: selectedLayout._id,
+        selectedLayoutId: layout._id
       };
 
-      setRoom(updatedRoom);
-
-      /*
-       * Keep sessionStorage synchronized with
-       * the backend state.
-       */
-      sessionStorage.setItem(
-        "roomcraft-current-room",
-        JSON.stringify(updatedRoom)
-      );
-
-      setSuccess(
-        `Layout ${
-          selectedLayoutIndex + 1
-        } confirmed successfully!`
-      );
+      setRoom(updated);
+      sessionStorage.setItem("roomcraft-current-room", JSON.stringify(updated));
+      setSuccess(`Layout #${selectedIndex + 1} confirmed as your primary room arrangement!`);
     } catch (err) {
-      console.error(
-        "Failed to confirm layout:",
-        err
-      );
-
-      setError(
-        err.message ||
-          "Failed to confirm layout."
-      );
+      console.error("Confirmation error:", err);
+      setError(err.message || "Failed to confirm layout.");
     } finally {
       setIsConfirming(false);
     }
   };
 
-  /*
-   * Loading state
-   */
+  const handleRegenerate = async () => {
+    if (!roomId) return;
+    try {
+      setIsRegenerating(true);
+      setError("");
+      setSuccess("");
+
+      await generateLayouts(roomId);
+      const layoutsRes = await getRoomLayouts(roomId);
+      setGeneratedLayouts(layoutsRes.layouts || []);
+      setSelectedIndex(0);
+      setSuccess("Generated a fresh batch of Pareto-optimal arrangements!");
+    } catch (err) {
+      console.error("Regeneration error:", err);
+      setError(err.message || "Failed to re-generate layouts.");
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+
   if (isLoading) {
     return (
-      <div>
-        <h1>Generated Layouts</h1>
-
-        <p>
-          Loading generated layouts...
-        </p>
+      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "var(--bg-primary)" }}>
+        <Navbar />
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px" }}>
+          <Sparkles size={36} color="#6366f1" className="pulse-glow" />
+          <h2 style={{ fontSize: "20px" }}>Evaluating Evolutionary Generations...</h2>
+          <p style={{ color: "var(--text-muted)", fontSize: "14px" }}>
+            Extracting non-dominated Pareto front candidates
+          </p>
+        </div>
       </div>
     );
   }
 
-  /*
-   * Fatal error before room information was loaded.
-   */
   if (error && !room) {
     return (
-      <div>
-        <h1>Generated Layouts</h1>
-
-        <p
-          style={{
-            color: "red",
-          }}
-        >
-          {error}
-        </p>
+      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "var(--bg-primary)" }}>
+        <Navbar />
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px" }}>
+          <AlertCircle size={40} color="#f43f5e" />
+          <h2 style={{ fontSize: "22px" }}>Room Unavailable</h2>
+          <p style={{ color: "var(--text-secondary)", fontSize: "14px", maxWidth: "450px", textAlign: "center" }}>
+            {error}
+          </p>
+          <Link to="/room-setup" className="btn-primary" style={{ marginTop: "12px" }}>
+            <ArrowLeft size={16} />
+            <span>Return to Room Setup</span>
+          </Link>
+        </div>
       </div>
     );
   }
 
-  /*
-   * No room available.
-   */
-  if (!room) {
-    return (
-      <div>
-        <h1>Generated Layouts</h1>
-
-        <p>
-          Room information is unavailable.
-        </p>
-      </div>
-    );
-  }
-
-  /*
-   * Backend returned no layouts.
-   */
-  if (generatedLayouts.length === 0) {
-    return (
-      <div>
-        <h1>Generated Layouts</h1>
-
-        <p>
-          No generated layouts were found
-          for this room.
-        </p>
-      </div>
-    );
-  }
-
-  const selectedLayout =
-    generatedLayouts[selectedLayoutIndex];
+  const selectedLayout = generatedLayouts[selectedIndex] || generatedLayouts[0];
+  const isConfirmed = selectedLayout && room?.selectedLayoutId === selectedLayout._id;
 
   return (
-    <div>
-      <h1>Generated Layouts</h1>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "var(--bg-primary)" }}>
+      <Navbar />
 
-      <p>
-        Room: {room.width} × {room.height} cm
-      </p>
-
-      {error && (
-        <p
-          style={{
-            color: "red",
-          }}
-        >
-          {error}
-        </p>
-      )}
-
-      {success && (
-        <p
-          style={{
-            color: "green",
-          }}
-        >
-          {success}
-        </p>
-      )}
-
-      <h2>Select a Layout</h2>
-
-      <div
-        style={{
+      <main style={{ maxWidth: "1440px", margin: "0 auto", padding: "28px 24px 80px", width: "100%" }}>
+        {/* Top Navigation & Status Bar */}
+        <div style={{
           display: "flex",
-          gap: "20px",
+          justifyContent: "space-between",
+          alignItems: "center",
           flexWrap: "wrap",
-          justifyContent: "center",
-          marginBottom: "30px",
-        }}
-      >
-        {generatedLayouts.map(
-          (generatedLayout, index) => (
-            <div
-              key={
-                generatedLayout._id ||
-                index
-              }
-              style={{
-                border:
-                  selectedLayoutIndex === index
-                    ? "3px solid blue"
-                    : "1px solid #999",
+          gap: "16px",
+          marginBottom: "24px"
+        }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <Link to="/room-setup" style={{ color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "4px", fontSize: "13px" }}>
+                <ArrowLeft size={14} />
+                <span>Back to Setup</span>
+              </Link>
+              <span style={{ color: "var(--border-medium)" }}>/</span>
+              <span style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
+                Room {room?.width} × {room?.height} cm
+              </span>
+            </div>
+            <h1 style={{ fontSize: "28px", marginTop: "4px" }}>Pareto Generated Layouts</h1>
+          </div>
 
-                padding: "15px",
-                width: "250px",
-                textAlign: "center",
-                borderRadius: "8px",
-              }}
-            >
-              <h3>
-                Layout {index + 1}
-              </h3>
-
-              <p>
-                Traffic Flow:{" "}
-                {generatedLayout.scores?.trafficFlow}
-              </p>
-
-              <p>
-                Light Exposure:{" "}
-                {generatedLayout.scores?.lightExposure}
-              </p>
-
-              <p>
-                Clearance:{" "}
-                {generatedLayout.scores?.clearance}
-              </p>
-
-              <p>
-                Clustering:{" "}
-                {generatedLayout.scores?.clustering}
-              </p>
-
-              <p>
-                Pareto Optimal:{" "}
-                {generatedLayout.isParetoOptimal
-                  ? "Yes"
-                  : "No"}
-              </p>
-
-              {room.selectedLayoutId ===
-                generatedLayout._id && (
-                <p
-                  style={{
-                    color: "green",
-                    fontWeight: "bold",
-                  }}
-                >
-                  Confirmed Layout
-                </p>
-              )}
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            {/* View Mode Toggle: 2D vs 3D */}
+            <div style={{
+              display: "flex",
+              background: "var(--bg-input)",
+              padding: "4px",
+              borderRadius: "var(--radius-md)",
+              border: "1px solid var(--border-medium)"
+            }}>
+              <button
+                type="button"
+                onClick={() => setViewMode("2d")}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "6px 14px",
+                  borderRadius: "var(--radius-sm)",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  background: viewMode === "2d" ? "var(--primary)" : "transparent",
+                  color: viewMode === "2d" ? "#ffffff" : "var(--text-secondary)"
+                }}
+              >
+                <Eye size={15} />
+                <span>2D Blueprint</span>
+              </button>
 
               <button
-                onClick={() =>
-                  handleSelectLayout(index)
-                }
+                type="button"
+                onClick={() => setViewMode("3d")}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "6px 14px",
+                  borderRadius: "var(--radius-sm)",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  background: viewMode === "3d" ? "linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)" : "transparent",
+                  color: viewMode === "3d" ? "#ffffff" : "var(--text-secondary)"
+                }}
               >
-                Select Layout
+                <Box size={15} />
+                <span>3D Orbit View</span>
               </button>
             </div>
-          )
+
+            {/* Re-generate Button */}
+            <button
+              onClick={handleRegenerate}
+              disabled={isRegenerating}
+              className="btn-secondary"
+              style={{ fontSize: "13px" }}
+            >
+              <RotateCw size={14} className={isRegenerating ? "pulse-glow" : ""} />
+              <span>{isRegenerating ? "Evolving..." : "Evolve New Batch"}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Feedback Banners */}
+        {error && (
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            padding: "12px 16px",
+            background: "rgba(244, 63, 94, 0.15)",
+            border: "1px solid rgba(244, 63, 94, 0.4)",
+            borderRadius: "var(--radius-md)",
+            color: "#fda4af",
+            fontSize: "14px",
+            marginBottom: "20px"
+          }}>
+            <AlertCircle size={18} />
+            <span>{error}</span>
+          </div>
         )}
-      </div>
 
-      <h2>Selected Layout</h2>
+        {success && (
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            padding: "12px 16px",
+            background: "rgba(16, 185, 129, 0.15)",
+            border: "1px solid rgba(16, 185, 129, 0.4)",
+            borderRadius: "var(--radius-md)",
+            color: "#6ee7b7",
+            fontSize: "14px",
+            marginBottom: "20px"
+          }}>
+            <CheckCircle2 size={18} />
+            <span>{success}</span>
+          </div>
+        )}
 
-      <RoomCanvas
-        roomWidth={room.width}
-        roomHeight={room.height}
-        layout={selectedLayout.layout}
-        furnitureCatalog={furnitureCatalog}
-        doors={room.doors}
-        windows={room.windows}
-      />
+        {/* Layout Selection Carousel / Grid */}
+        <div style={{ marginBottom: "28px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+            <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              Select Candidate Layout ({generatedLayouts.length} Generated)
+            </span>
+            <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+              Sorted by Pareto Dominance & Diversity
+            </span>
+          </div>
 
-      <button
-        onClick={handleConfirmLayout}
-        disabled={isConfirming}
-      >
-        {isConfirming
-          ? "Confirming..."
-          : "Confirm Layout"}
-      </button>
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
+            gap: "14px"
+          }}>
+            {generatedLayouts.map((layout, idx) => {
+              const isSelected = selectedIndex === idx;
+              const isItemConfirmed = room?.selectedLayoutId === layout._id;
+
+              return (
+                <div
+                  key={layout._id || idx}
+                  onClick={() => {
+                    setSelectedIndex(idx);
+                    setError("");
+                    setSuccess("");
+                  }}
+                  className="glass-panel"
+                  style={{
+                    padding: "16px",
+                    borderRadius: "var(--radius-md)",
+                    border: isSelected
+                      ? "2px solid #6366f1"
+                      : isItemConfirmed
+                      ? "1.5px solid #f59e0b"
+                      : "1px solid var(--border-subtle)",
+                    boxShadow: isSelected
+                      ? "0 0 20px rgba(99, 102, 241, 0.35)"
+                      : "none",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                    position: "relative",
+                    background: isSelected ? "rgba(30, 41, 59, 0.95)" : "rgba(17, 24, 39, 0.75)"
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                    <span style={{ fontSize: "15px", fontWeight: 700, color: "#ffffff" }}>
+                      Option #{idx + 1}
+                    </span>
+
+                    {isItemConfirmed ? (
+                      <span className="badge badge-confirmed">
+                        <Check size={12} /> Confirmed
+                      </span>
+                    ) : (
+                      <span className="badge badge-pareto">
+                        Pareto Optimal
+                      </span>
+                    )}
+                  </div>
+
+                  {/* 4 Score Indicators in mini-chips */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", fontSize: "11px" }}>
+                    <div style={{ padding: "4px 6px", background: "rgba(99, 102, 241, 0.1)", borderRadius: "4px", color: "#a5b4fc" }}>
+                      Traffic: {Math.round((layout.scores?.trafficFlow ?? 0) * 100)}%
+                    </div>
+                    <div style={{ padding: "4px 6px", background: "rgba(6, 182, 212, 0.1)", borderRadius: "4px", color: "#67e8f9" }}>
+                      Light: {Math.round((layout.scores?.lightExposure ?? 0) * 100)}%
+                    </div>
+                    <div style={{ padding: "4px 6px", background: "rgba(16, 185, 129, 0.1)", borderRadius: "4px", color: "#6ee7b7" }}>
+                      Clear: {Math.round((layout.scores?.clearance ?? 0) * 100)}%
+                    </div>
+                    <div style={{ padding: "4px 6px", background: "rgba(245, 158, 11, 0.1)", borderRadius: "4px", color: "#fde68a" }}>
+                      Cluster: {Math.round((layout.scores?.clustering ?? 0) * 100)}%
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Main Layout Presentation Area */}
+        {selectedLayout && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "28px", alignItems: "start" }}>
+            {/* Center Canvas View (2D or 3D) */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              {viewMode === "2d" ? (
+                <RoomCanvas
+                  roomWidth={room.width}
+                  roomHeight={room.height}
+                  layout={selectedLayout.layout}
+                  furnitureCatalog={furnitureCatalog}
+                  doors={room.doors}
+                  windows={room.windows}
+                  interactive={true}
+                />
+              ) : (
+                <Room3DView
+                  roomWidth={room.width}
+                  roomHeight={room.height}
+                  layout={selectedLayout.layout}
+                  furnitureCatalog={furnitureCatalog}
+                  doors={room.doors}
+                  windows={room.windows}
+                />
+              )}
+            </div>
+
+            {/* Right Side: Score Breakdown & Confirmation Card */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+              <div className="glass-panel" style={{ padding: "20px" }}>
+                <h3 style={{ fontSize: "16px", marginBottom: "16px" }}>
+                  Layout #{selectedIndex + 1} Metrics
+                </h3>
+
+                <ScoreBreakdown scores={selectedLayout.scores} />
+
+                {/* Confirm Action Button */}
+                <div style={{ marginTop: "24px" }}>
+                  <button
+                    onClick={handleConfirm}
+                    disabled={isConfirming || isConfirmed}
+                    className={isConfirmed ? "btn-secondary" : "btn-primary"}
+                    style={{
+                      width: "100%",
+                      padding: "14px",
+                      fontSize: "15px",
+                      fontWeight: 700
+                    }}
+                  >
+                    {isConfirming ? (
+                      <span>Saving Confirmation...</span>
+                    ) : isConfirmed ? (
+                      <>
+                        <CheckCircle2 size={18} color="#10b981" />
+                        <span>Confirmed Arrangement</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={18} />
+                        <span>Confirm This Layout</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
     </div>
   );
 }
