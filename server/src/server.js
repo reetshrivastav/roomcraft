@@ -12,6 +12,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use("/rooms", roomsRouter);
+app.use("/api/rooms", roomsRouter);
 
 // Test route
 app.get("/api/health", (req, res) => {

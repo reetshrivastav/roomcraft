@@ -57,6 +57,17 @@ const roomSchema = new mongoose.Schema(
       required: true
     },
 
+    name: {
+      type: String,
+      default: "My Room"
+    },
+
+    roomType: {
+      type: String,
+      enum: ["bedroom", "living", "office", "dining", "studio"],
+      default: "bedroom"
+    },
+
     width: {
       type: Number,
       required: true,
@@ -67,6 +78,12 @@ const roomSchema = new mongoose.Schema(
       type: Number,
       required: true,
       min: 1
+    },
+
+    northFacing: {
+      type: String,
+      enum: ["top", "right", "bottom", "left"],
+      default: "top"
     },
 
     doors: {
@@ -82,6 +99,11 @@ const roomSchema = new mongoose.Schema(
     furnitureSelection: {
       type: [String],
       default: []
+    },
+
+    customDimensions: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {}
     },
 
     selectedLayoutId: {

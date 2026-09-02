@@ -1,16 +1,29 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import confetti from "canvas-confetti";
 import {
   Sparkles, CheckCircle2, Layers, Compass, ArrowLeft,
-  RotateCw, Share2, Box, Eye, Check, AlertCircle
+  RotateCw, Share2, Box, Eye, Check, AlertCircle, Plus,
+  Trash2, X, Sliders, Move, Edit3, ChevronRight, PanelLeftOpen, PanelLeftClose, AlertTriangle
 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import RoomCanvas from "../components/RoomCanvas";
 import Room3DView from "../components/Room3DView";
 import ScoreBreakdown from "../components/ScoreBreakdown";
+import StyleModal from "../components/StyleModal";
+import stylePresets from "../data/stylePresets.json";
 import furnitureCatalog from "../furnitureCatalog.json";
-import { getRoom, getRoomLayouts, confirmLayout, generateLayouts } from "../services/room";
+import { getRoom, confirmLayout } from "../services/room";
+
+const CATEGORIES = [
+  { id: "all", label: "All" },
+  { id: "bed", label: "Beds" },
+  { id: "storage", label: "Storage" },
+  { id: "work", label: "Work" },
+  { id: "seating", label: "Seating" },
+  { id: "table", label: "Tables" },
+  { id: "entertainment", label: "Media" }
+];
 
 function LayoutView() {
   const location = useLocation();
@@ -25,11 +38,25 @@ function LayoutView() {
   const [isConfirming, setIsConfirming] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
 
+  // Floating sidebar state
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarTab, setSidebarTab] = useState("current"); // "current" | "catalog"
+  const [catalogCategory, setCatalogCategory] = useState("all");
+  const [catalogSearch, setCatalogSearch] = useState("");
+  const [editingItemIndex, setEditingItemIndex] = useState(null);
+  const [customDimensions, setCustomDimensions] = useState({});
+  const [isStyleModalOpen, setIsStyleModalOpen] = useState(false);
+  const [activeStyle, setActiveStyle] = useState(stylePresets[0]);
+
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   const params = new URLSearchParams(location.search);
   const roomId = params.get("roomId");
+
+  const catalogMap = useMemo(() => {
+    return new Map(furnitureCatalog.map((f) => [f.id, f]));
+  }, []);
 
   useEffect(() => {
     const initData = async () => {
@@ -61,21 +88,34 @@ function LayoutView() {
           roomData = fetched.room;
         }
 
+        if (!roomData) {
+          throw new Error("Failed to load room metadata.");
+        }
+
         setRoom(roomData);
+        if (roomData.customDimensions) {
+          setCustomDimensions(roomData.customDimensions);
+        }
 
-        const layoutsRes = await getRoomLayouts(roomId);
-        const layouts = layoutsRes.layouts || [];
-        setGeneratedLayouts(layouts);
+        // Fetch layouts
+        const { getRoomLayouts } = await import("../services/room");
+        const layoutsData = await getRoomLayouts(roomId);
 
-        if (roomData?.selectedLayoutId) {
-          const matchIdx = layouts.findIndex((l) => l._id === roomData.selectedLayoutId);
-          if (matchIdx !== -1) {
-            setSelectedIndex(matchIdx);
+        if (layoutsData?.layouts && layoutsData.layouts.length > 0) {
+          setGeneratedLayouts(layoutsData.layouts);
+          if (roomData.selectedLayoutId) {
+            const matchIdx = layoutsData.layouts.findIndex(l => l._id === roomData.selectedLayoutId);
+            if (matchIdx !== -1) setSelectedIndex(matchIdx);
           }
+        } else {
+          // Generate if none exist
+          const { generateLayouts } = await import("../services/room");
+          const genData = await generateLayouts(roomId);
+          setGeneratedLayouts(genData.layouts || []);
         }
       } catch (err) {
-        console.error("Failed to load layout data:", err);
-        setError(err.message || "Failed to fetch room or layout data.");
+        console.error("LayoutView init error:", err);
+        setError(err.message || "Failed to load room layouts.");
       } finally {
         setIsLoading(false);
       }
@@ -84,31 +124,76 @@ function LayoutView() {
     initData();
   }, [roomId]);
 
+  const selectedLayout = generatedLayouts[selectedIndex] || generatedLayouts[0];
+  const isConfirmed = selectedLayout && room?.selectedLayoutId === selectedLayout._id;
+
+  // Collision detection for currently selected layout
+  const collisionCount = useMemo(() => {
+    if (!selectedLayout?.layout) return 0;
+    const items = selectedLayout.layout;
+    let count = 0;
+
+    for (let i = 0; i < items.length; i++) {
+      for (let j = i + 1; j < items.length; j++) {
+        const itemA = items[i];
+        const itemB = items[j];
+
+        const isChairTable =
+          (itemA.furnitureId === "dining-chair" && itemB.furnitureId === "dining-table") ||
+          (itemA.furnitureId === "dining-table" && itemB.furnitureId === "dining-chair") ||
+          (itemA.furnitureId === "office-chair" && itemB.furnitureId === "desk") ||
+          (itemA.furnitureId === "desk" && itemB.furnitureId === "office-chair");
+
+        const furnA = catalogMap.get(itemA.furnitureId);
+        const furnB = catalogMap.get(itemB.furnitureId);
+        const cA = customDimensions[itemA.furnitureId];
+        const cB = customDimensions[itemB.furnitureId];
+
+        const baseWA = cA?.width || furnA?.width || 50;
+        const baseDA = cA?.depth || furnA?.depth || 50;
+        const rotA = itemA.rotation === 90 || itemA.rotation === 270;
+        const wA = rotA ? baseDA : baseWA;
+        const hA = rotA ? baseWA : baseDA;
+
+        const baseWB = cB?.width || furnB?.width || 50;
+        const baseDB = cB?.depth || furnB?.depth || 50;
+        const rotB = itemB.rotation === 90 || itemB.rotation === 270;
+        const wB = rotB ? baseDB : baseWB;
+        const hB = rotB ? baseWB : baseDB;
+
+        // Allow 20cm tuck for chairs under tables/desks
+        const tuck = isChairTable ? 20 : 0;
+
+        const overlapX = itemA.x + tuck < itemB.x + wB && itemA.x + wA - tuck > itemB.x;
+        const overlapY = itemA.y + tuck < itemB.y + hB && itemA.y + hA - tuck > itemB.y;
+
+        if (overlapX && overlapY) count++;
+      }
+    }
+    return count;
+  }, [selectedLayout, customDimensions, catalogMap]);
+
   const handleConfirm = async () => {
-    if (!roomId || !generatedLayouts[selectedIndex]) return;
+    if (!selectedLayout || !room) return;
+    if (collisionCount > 0) {
+      setError(`Cannot confirm layout: ${collisionCount} overlapping items detected. Please reposition items before confirming.`);
+      return;
+    }
 
     try {
       setIsConfirming(true);
       setError("");
-      setSuccess("");
 
-      const layout = generatedLayouts[selectedIndex];
-      const res = await confirmLayout(roomId, layout._id);
+      await confirmLayout(room._id, selectedLayout._id);
+
+      setRoom(prev => ({ ...prev, selectedLayoutId: selectedLayout._id }));
+      setSuccess("Arrangement successfully confirmed!");
 
       confetti({
-        particleCount: 120,
-        spread: 80,
+        particleCount: 100,
+        spread: 70,
         origin: { y: 0.6 }
       });
-
-      const updated = {
-        ...room,
-        selectedLayoutId: layout._id
-      };
-
-      setRoom(updated);
-      sessionStorage.setItem("roomcraft-current-room", JSON.stringify(updated));
-      setSuccess(`Layout Option #${selectedIndex + 1} confirmed as your authoritative room layout!`);
     } catch (err) {
       console.error("Confirmation error:", err);
       setError(err.message || "Failed to confirm layout.");
@@ -117,24 +202,104 @@ function LayoutView() {
     }
   };
 
-  const handleRegenerate = async () => {
-    if (!roomId) return;
-    try {
-      setIsRegenerating(true);
-      setError("");
-      setSuccess("");
+  const handleLayoutChange = (newLayout) => {
+    const updated = [...generatedLayouts];
+    updated[selectedIndex] = {
+      ...updated[selectedIndex],
+      layout: newLayout
+    };
+    setGeneratedLayouts(updated);
+  };
 
-      await generateLayouts(roomId);
-      const layoutsRes = await getRoomLayouts(roomId);
-      setGeneratedLayouts(layoutsRes.layouts || []);
-      setSelectedIndex(0);
-      setSuccess("Generated 8 diverse spatial layout options!");
-    } catch (err) {
-      console.error("Regeneration error:", err);
-      setError(err.message || "Failed to re-generate layouts.");
-    } finally {
-      setIsRegenerating(false);
+  // Add item to active layout
+  const handleAddItem = (furnitureId) => {
+    if (!selectedLayout || !room) return;
+    const furniture = catalogMap.get(furnitureId);
+    if (!furniture) return;
+
+    const custom = customDimensions[furnitureId];
+    const w = custom?.width || furniture.width;
+    const d = custom?.depth || furniture.depth;
+
+    // Find a free spot in the room
+    const currentItems = selectedLayout.layout;
+    let placedX = Math.round(room.width / 2 - w / 2);
+    let placedY = Math.round(room.height / 2 - d / 2);
+
+    for (let offset = 0; offset < 200; offset += 30) {
+      const testX = Math.max(15, Math.min(room.width - w - 15, placedX + offset));
+      const testY = Math.max(15, Math.min(room.height - d - 15, placedY + offset));
+      const collision = currentItems.some(item => {
+        const itemFurn = catalogMap.get(item.furnitureId);
+        const iw = itemFurn?.width || 50;
+        const id = itemFurn?.depth || 50;
+        return (
+          testX < item.x + iw &&
+          testX + w > item.x &&
+          testY < item.y + id &&
+          testY + d > item.y
+        );
+      });
+      if (!collision) {
+        placedX = testX;
+        placedY = testY;
+        break;
+      }
     }
+
+    const newItem = {
+      furnitureId,
+      x: placedX,
+      y: placedY,
+      rotation: 0
+    };
+
+    handleLayoutChange([...currentItems, newItem]);
+  };
+
+  // Remove item from active layout
+  const handleRemoveItem = (index) => {
+    if (!selectedLayout) return;
+    const updated = selectedLayout.layout.filter((_, idx) => idx !== index);
+    handleLayoutChange(updated);
+  };
+
+  // Rotate item in active layout
+  const handleRotateItem = (index) => {
+    if (!selectedLayout) return;
+    const item = selectedLayout.layout[index];
+    const nextRot = (item.rotation + 90) % 360;
+    const updated = [...selectedLayout.layout];
+    updated[index] = { ...item, rotation: nextRot };
+    handleLayoutChange(updated);
+  };
+
+  // Update item custom dimensions
+  const handleUpdateDimension = (furnitureId, field, value) => {
+    setCustomDimensions(prev => ({
+      ...prev,
+      [furnitureId]: {
+        ...(prev[furnitureId] || {}),
+        [field]: Number(value)
+      }
+    }));
+  };
+
+  // 2D Mini Preview Box
+  const MiniPreview = ({ id, width, depth }) => {
+    const maxDim = Math.max(width, depth);
+    const scale = 24 / maxDim;
+    return (
+      <div style={{
+        width: Math.round(width * scale),
+        height: Math.round(depth * scale),
+        background: "rgba(180, 123, 72, 0.25)",
+        border: "1.5px solid #b47b48",
+        borderRadius: "2px",
+        minWidth: "6px",
+        minHeight: "6px"
+      }} />
+    );
   };
 
   if (isLoading) {
@@ -171,16 +336,327 @@ function LayoutView() {
     );
   }
 
-  const selectedLayout = generatedLayouts[selectedIndex] || generatedLayouts[0];
-  const isConfirmed = selectedLayout && room?.selectedLayoutId === selectedLayout._id;
-
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "var(--bg-primary)" }}>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "var(--bg-primary)", position: "relative" }}>
       <Navbar />
 
+      {/* Floating Left Sidebar Toggle Button */}
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        style={{
+          position: "fixed",
+          left: sidebarOpen ? "360px" : "16px",
+          top: "165px",
+          zIndex: 100,
+          background: "#ffffff",
+          border: "1.5px solid var(--primary)",
+          borderRadius: "var(--radius-full)",
+          padding: "10px 14px",
+          boxShadow: "0 6px 20px rgba(180, 123, 72, 0.25)",
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          cursor: "pointer",
+          transition: "left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s ease",
+          fontSize: "13px",
+          fontWeight: 700,
+          color: "var(--primary)"
+        }}
+        title="Add / Remove / Edit Furniture Items"
+      >
+        {sidebarOpen ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
+        <span>{sidebarOpen ? "Close Editor" : "Furniture Editor"}</span>
+        <span style={{
+          background: "var(--primary)",
+          color: "#fff",
+          borderRadius: "var(--radius-full)",
+          padding: "2px 7px",
+          fontSize: "11px"
+        }}>
+          {selectedLayout?.layout?.length || 0}
+        </span>
+      </button>
+
+      {/* Floating Left Sidebar Panel (Coohom Style) */}
+      <div style={{
+        position: "fixed",
+        top: "70px",
+        left: sidebarOpen ? 0 : "-380px",
+        width: "360px",
+        height: "calc(100vh - 70px)",
+        background: "rgba(255, 255, 255, 0.97)",
+        backdropFilter: "blur(12px)",
+        borderRight: "1px solid var(--border-medium)",
+        boxShadow: "4px 0 24px rgba(50, 35, 20, 0.12)",
+        zIndex: 90,
+        transition: "left 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden"
+      }}>
+        {/* Sidebar Header & Tabs */}
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border-subtle)", background: "#fbf9f5" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+            <h3 style={{ fontSize: "16px", display: "flex", alignItems: "center", gap: "6px" }}>
+              <Layers size={18} color="#b47b48" />
+              <span>Furniture Studio</span>
+            </h3>
+            <button onClick={() => setSidebarOpen(false)} style={{ background: "transparent", color: "var(--text-muted)" }}>
+              <X size={18} />
+            </button>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
+            <button
+              onClick={() => setSidebarTab("current")}
+              style={{
+                padding: "6px 12px",
+                borderRadius: "var(--radius-sm)",
+                fontSize: "12px",
+                fontWeight: 700,
+                background: sidebarTab === "current" ? "var(--primary)" : "var(--bg-input)",
+                color: sidebarTab === "current" ? "#fff" : "var(--text-secondary)",
+                border: "none"
+              }}
+            >
+              In Layout ({selectedLayout?.layout?.length || 0})
+            </button>
+            <button
+              onClick={() => setSidebarTab("catalog")}
+              style={{
+                padding: "6px 12px",
+                borderRadius: "var(--radius-sm)",
+                fontSize: "12px",
+                fontWeight: 700,
+                background: sidebarTab === "catalog" ? "var(--primary)" : "var(--bg-input)",
+                color: sidebarTab === "catalog" ? "#fff" : "var(--text-secondary)",
+                border: "none"
+              }}
+            >
+              + Add Catalog
+            </button>
+          </div>
+        </div>
+
+        {/* Tab 1: Current Items in Layout */}
+        {sidebarTab === "current" && (
+          <div style={{ flex: 1, overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
+            <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>
+              Active Items in Layout #{selectedIndex + 1}
+            </span>
+
+            {selectedLayout?.layout?.map((item, idx) => {
+              const furn = catalogMap.get(item.furnitureId);
+              if (!furn) return null;
+              const custom = customDimensions[item.furnitureId];
+              const displayW = custom?.width || furn.width;
+              const displayD = custom?.depth || furn.depth;
+              const isEditing = editingItemIndex === idx;
+
+              return (
+                <div
+                  key={`${item.furnitureId}-${idx}`}
+                  style={{
+                    background: "var(--bg-card)",
+                    border: "1px solid var(--border-subtle)",
+                    borderRadius: "var(--radius-md)",
+                    padding: "10px 12px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "6px",
+                    boxShadow: "var(--shadow-sm)"
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <MiniPreview id={item.furnitureId} width={displayW} depth={displayD} />
+                      <div>
+                        <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-primary)" }}>
+                          {(() => {
+                            const sameItems = selectedLayout?.layout?.filter(g => g.furnitureId === item.furnitureId) || [];
+                            if (sameItems.length <= 1) return furn.name;
+                            const itemIndex = sameItems.indexOf(item);
+                            return `${furn.name} ${itemIndex + 1}`;
+                          })()}
+                        </span>
+                        <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                          ({item.x}, {item.y}) cm • {displayW}×{displayD} cm • {item.rotation}°
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                      <button
+                        onClick={() => setEditingItemIndex(isEditing ? null : idx)}
+                        style={{ background: isEditing ? "var(--primary)" : "transparent", color: isEditing ? "#fff" : "var(--text-muted)", padding: "4px", borderRadius: "4px" }}
+                        title="Customize Size"
+                      >
+                        <Edit3 size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleRotateItem(idx)}
+                        style={{ background: "transparent", color: "#b47b48", padding: "4px" }}
+                        title="Rotate 90°"
+                      >
+                        <RotateCw size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleRemoveItem(idx)}
+                        style={{ background: "transparent", color: "#e11d48", padding: "4px" }}
+                        title="Remove from layout"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Inline Dimension Editor with Apply Button */}
+                  {isEditing && (
+                    <div style={{
+                      marginTop: "6px",
+                      padding: "10px",
+                      background: "#ffffff",
+                      borderRadius: "var(--radius-sm)",
+                      border: "1px solid var(--border-medium)",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "8px"
+                    }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <div style={{ flex: 1 }}>
+                          <span style={{ fontSize: "10px", color: "var(--text-muted)", display: "block" }}>Width (cm)</span>
+                          <input
+                            type="number"
+                            value={displayW}
+                            onChange={(e) => handleUpdateDimension(item.furnitureId, "width", e.target.value)}
+                            className="form-input"
+                            style={{ padding: "4px 6px", fontSize: "12px", width: "100%" }}
+                          />
+                        </div>
+                        <span style={{ marginTop: "12px", color: "var(--text-muted)" }}>×</span>
+                        <div style={{ flex: 1 }}>
+                          <span style={{ fontSize: "10px", color: "var(--text-muted)", display: "block" }}>Depth (cm)</span>
+                          <input
+                            type="number"
+                            value={displayD}
+                            onChange={(e) => handleUpdateDimension(item.furnitureId, "depth", e.target.value)}
+                            className="form-input"
+                            style={{ padding: "4px 6px", fontSize: "12px", width: "100%" }}
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setEditingItemIndex(null)}
+                        className="btn-secondary"
+                        style={{ padding: "3px 8px", fontSize: "11px", alignSelf: "flex-end", color: "#059669", fontWeight: 700 }}
+                      >
+                        <Check size={12} />
+                        <span>Apply & Live Update</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Tab 2: Catalog to Add New Furniture */}
+        {sidebarTab === "catalog" && (
+          <div style={{ flex: 1, overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
+            <div style={{ display: "flex", gap: "4px", overflowX: "auto", paddingBottom: "6px" }}>
+              {CATEGORIES.map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => setCatalogCategory(cat.id)}
+                  style={{
+                    padding: "3px 8px",
+                    borderRadius: "var(--radius-full)",
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    background: catalogCategory === cat.id ? "var(--primary)" : "var(--bg-input)",
+                    color: catalogCategory === cat.id ? "#fff" : "var(--text-secondary)",
+                    border: "none",
+                    whiteSpace: "nowrap"
+                  }}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+
+            <input
+              type="text"
+              placeholder="Search catalog..."
+              value={catalogSearch}
+              onChange={(e) => setCatalogSearch(e.target.value)}
+              className="form-input"
+              style={{ fontSize: "12px", padding: "6px 10px" }}
+            />
+
+            {furnitureCatalog
+              .filter(item => (catalogCategory === "all" || item.category === catalogCategory) &&
+                item.name.toLowerCase().includes(catalogSearch.toLowerCase()))
+              .map(item => {
+                const custom = customDimensions[item.id];
+                const displayW = custom?.width || item.width;
+                const displayD = custom?.depth || item.depth;
+
+                return (
+                  <div
+                    key={item.id}
+                    style={{
+                      background: "var(--bg-card)",
+                      border: "1px solid var(--border-subtle)",
+                      borderRadius: "var(--radius-md)",
+                      padding: "10px 12px",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center"
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <MiniPreview id={item.id} width={displayW} depth={displayD} />
+                      <div>
+                        <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-primary)" }}>
+                          {item.name}
+                        </span>
+                        <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                          {displayW} × {displayD} cm
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => handleAddItem(item.id)}
+                      className="btn-primary"
+                      style={{ padding: "4px 10px", fontSize: "11px", display: "flex", alignItems: "center", gap: "4px" }}
+                    >
+                      <Plus size={12} />
+                      <span>Add</span>
+                    </button>
+                  </div>
+                );
+              })}
+          </div>
+        )}
+      </div>
+
       <main style={{ maxWidth: "1440px", margin: "0 auto", padding: "28px 24px 80px", width: "100%" }}>
-        {/* Top Navigation & Status Bar */}
+        {/* Top Navigation & Status Bar (Sticky beyond initial scroll) */}
         <div style={{
+          position: "sticky",
+          top: "68px",
+          zIndex: 40,
+          background: "rgba(251, 249, 245, 0.94)",
+          backdropFilter: "blur(14px)",
+          WebkitBackdropFilter: "blur(14px)",
+          padding: "14px 22px",
+          borderRadius: "var(--radius-lg)",
+          border: "1px solid rgba(226, 218, 208, 0.85)",
+          boxShadow: "0 6px 24px rgba(50, 35, 20, 0.08)",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
@@ -195,8 +671,8 @@ function LayoutView() {
                 <span>Back to Setup</span>
               </Link>
               <span style={{ color: "var(--border-medium)" }}>/</span>
-              <span style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
-                Room {room?.width} × {room?.height} cm
+              <span style={{ fontSize: "13px", color: "var(--text-secondary)", fontWeight: 600 }}>
+                {room?.name || "My Room"} ({room?.roomType?.toUpperCase() || "BEDROOM"}) • {room?.width} × {room?.height} cm
               </span>
             </div>
             <h1 style={{ fontSize: "28px", marginTop: "4px" }}>Generated Layout Options</h1>
@@ -248,57 +724,64 @@ function LayoutView() {
                 }}
               >
                 <Box size={15} />
-                <span>3D BIM Orbit View</span>
+                <span>3D Studio</span>
               </button>
             </div>
 
-            {/* Re-generate Button */}
+            {/* AI Style Presets Trigger Button */}
             <button
-              onClick={handleRegenerate}
-              disabled={isRegenerating}
+              type="button"
+              onClick={() => setIsStyleModalOpen(true)}
               className="btn-secondary"
-              style={{ fontSize: "13px" }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "8px 16px",
+                fontSize: "13px",
+                fontWeight: 600,
+                border: "1px solid #d4b28c",
+                background: "#ffffff",
+                borderRadius: "var(--radius-md)",
+                boxShadow: "var(--shadow-sm)",
+                cursor: "pointer",
+                transition: "all 0.15s ease"
+              }}
+              title="Explore AI Style Recommendations & Material Presets"
             >
-              <RotateCw size={14} className={isRegenerating ? "pulse-glow" : ""} />
-              <span>{isRegenerating ? "Evolving..." : "Evolve New Batch"}</span>
+              <span>🎨</span>
+              <span style={{ color: "var(--text-primary)" }}>{activeStyle?.name || "AI Styles"}</span>
+              <span style={{
+                fontSize: "10px",
+                padding: "2px 8px",
+                borderRadius: "12px",
+                background: "rgba(180, 123, 72, 0.12)",
+                color: "#b47b48",
+                fontWeight: 700
+              }}>
+                {activeStyle?.badge || "Preset"}
+              </span>
             </button>
           </div>
         </div>
 
-        {/* Feedback Banners */}
         {error && (
           <div style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            padding: "12px 16px",
-            background: "rgba(225, 29, 72, 0.1)",
-            border: "1px solid rgba(225, 29, 72, 0.3)",
-            borderRadius: "var(--radius-md)",
-            color: "#be123c",
-            fontSize: "14px",
-            marginBottom: "20px"
+            display: "flex", alignItems: "center", gap: "10px", padding: "12px 16px",
+            background: "rgba(225, 29, 72, 0.1)", border: "1px solid rgba(225, 29, 72, 0.3)",
+            borderRadius: "var(--radius-md)", color: "#be123c", fontSize: "14px", marginBottom: "20px"
           }}>
-            <AlertCircle size={18} />
-            <span>{error}</span>
+            <AlertCircle size={18} /><span>{error}</span>
           </div>
         )}
 
         {success && (
           <div style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            padding: "12px 16px",
-            background: "rgba(5, 150, 105, 0.1)",
-            border: "1px solid rgba(5, 150, 105, 0.3)",
-            borderRadius: "var(--radius-md)",
-            color: "#047857",
-            fontSize: "14px",
-            marginBottom: "20px"
+            display: "flex", alignItems: "center", gap: "10px", padding: "12px 16px",
+            background: "rgba(5, 150, 105, 0.1)", border: "1px solid rgba(5, 150, 105, 0.3)",
+            borderRadius: "var(--radius-md)", color: "#047857", fontSize: "14px", marginBottom: "20px"
           }}>
-            <CheckCircle2 size={18} />
-            <span>{success}</span>
+            <CheckCircle2 size={18} /><span>{success}</span>
           </div>
         )}
 
@@ -309,7 +792,7 @@ function LayoutView() {
               Distinct Layout Archetypes ({generatedLayouts.length} Options)
             </span>
             <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
-              Optimized for Spatial Diversity & Zero Collisions
+              Optimized for Spatial Diversity, Storage Orientation & Ergonomics
             </span>
           </div>
 
@@ -318,65 +801,54 @@ function LayoutView() {
             gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
             gap: "14px"
           }}>
-            {generatedLayouts.map((layout, idx) => {
-              const isSelected = selectedIndex === idx;
-              const isItemConfirmed = room?.selectedLayoutId === layout._id;
+            {generatedLayouts.map((item, index) => {
+              const isSelected = index === selectedIndex;
+              const isCurrentConfirmed = room?.selectedLayoutId === item._id;
 
               return (
                 <div
-                  key={layout._id || idx}
-                  onClick={() => {
-                    setSelectedIndex(idx);
-                    setError("");
-                    setSuccess("");
-                  }}
-                  className="glass-panel"
+                  key={item._id || index}
+                  onClick={() => setSelectedIndex(index)}
                   style={{
-                    padding: "16px",
+                    padding: "14px 16px",
                     borderRadius: "var(--radius-md)",
-                    border: isSelected
-                      ? "2px solid #b47b48"
-                      : isItemConfirmed
-                      ? "1.5px solid #d97706"
-                      : "1px solid var(--border-subtle)",
-                    boxShadow: isSelected
-                      ? "0 4px 16px rgba(180, 123, 72, 0.25)"
-                      : "var(--shadow-sm)",
+                    background: isSelected ? "rgba(180, 123, 72, 0.12)" : "var(--bg-card)",
+                    border: `2px solid ${isSelected ? "var(--primary)" : "var(--border-subtle)"}`,
+                    boxShadow: isSelected ? "0 4px 14px rgba(180, 123, 72, 0.2)" : "var(--shadow-sm)",
                     cursor: "pointer",
-                    transition: "all 0.2s ease",
-                    position: "relative",
-                    background: isSelected ? "#fcfaf7" : "#ffffff"
+                    transition: "all 0.15s ease",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "10px"
                   }}
                 >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                    <span style={{ fontSize: "15px", fontWeight: 700, color: "var(--text-primary)" }}>
-                      Option #{idx + 1}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontWeight: 700, fontSize: "14px", color: "var(--text-primary)" }}>
+                      Option #{index + 1}
                     </span>
-
-                    {isItemConfirmed ? (
-                      <span className="badge badge-confirmed">
-                        <Check size={12} /> Confirmed
+                    {isCurrentConfirmed ? (
+                      <span className="badge badge-success">
+                        <Check size={11} /> Confirmed
                       </span>
                     ) : (
-                      <span className="badge badge-pareto">
+                      <span className="badge badge-tag" style={{ color: "#059669", borderColor: "rgba(5, 150, 105, 0.2)" }}>
                         Pareto Optimal
                       </span>
                     )}
                   </div>
 
-                  {/* 4 Score Indicators in mini-chips */}
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", fontSize: "11px" }}>
-                    <div style={{ padding: "4px 6px", background: "rgba(180, 123, 72, 0.08)", borderRadius: "4px", color: "#9c6536", fontWeight: 600 }}>
-                      Traffic: {Math.round((layout.scores?.trafficFlow ?? 0) * 100)}%
+                    <div style={{ background: "rgba(180, 123, 72, 0.08)", padding: "4px 8px", borderRadius: "4px" }}>
+                      Traffic: {Math.round((item.scores?.trafficFlow || 0) * 100)}%
                     </div>
-                    <div style={{ padding: "4px 6px", background: "rgba(2, 132, 199, 0.08)", borderRadius: "4px", color: "#0284c7", fontWeight: 600 }}>
-                      Light: {Math.round((layout.scores?.lightExposure ?? 0) * 100)}%
+                    <div style={{ background: "rgba(2, 132, 199, 0.08)", padding: "4px 8px", borderRadius: "4px" }}>
+                      Light: {Math.round((item.scores?.lightExposure || 0) * 100)}%
                     </div>
-                    <div style={{ padding: "4px 6px", background: "rgba(5, 150, 105, 0.08)", borderRadius: "4px", color: "#059669", fontWeight: 600 }}>
-                      Clear: {Math.round((layout.scores?.clearance ?? 0) * 100)}%
+                    <div style={{ background: "rgba(5, 150, 105, 0.08)", padding: "4px 8px", borderRadius: "4px" }}>
+                      Clear: {Math.round((item.scores?.clearance || 0) * 100)}%
                     </div>
-                    <div style={{ padding: "4px 6px", background: "rgba(217, 119, 6, 0.08)", borderRadius: "4px", color: "#d97706", fontWeight: 600 }}>
-                      Cluster: {Math.round((layout.scores?.clustering ?? 0) * 100)}%
+                    <div style={{ background: "rgba(217, 119, 6, 0.08)", padding: "4px 8px", borderRadius: "4px" }}>
+                      Cluster: {Math.round((item.scores?.clustering || 0) * 100)}%
                     </div>
                   </div>
                 </div>
@@ -385,7 +857,7 @@ function LayoutView() {
           </div>
         </div>
 
-        {/* Main Layout Presentation Area */}
+        {/* Main Presentation Area */}
         {selectedLayout && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "28px", alignItems: "start" }}>
             {/* Center Canvas View (2D or 3D) */}
@@ -399,6 +871,9 @@ function LayoutView() {
                   doors={room.doors}
                   windows={room.windows}
                   interactive={true}
+                  editable={true}
+                  customDimensions={customDimensions}
+                  onLayoutChange={handleLayoutChange}
                 />
               ) : (
                 <Room3DView
@@ -408,8 +883,42 @@ function LayoutView() {
                   furnitureCatalog={furnitureCatalog}
                   doors={room.doors}
                   windows={room.windows}
+                  roomType={room.roomType || "bedroom"}
+                  northFacing={room.northFacing || "top"}
+                  customDimensions={customDimensions}
+                  activeStyle={activeStyle}
+                  onLayoutChange={handleLayoutChange}
                 />
               )}
+
+              {/* Export Buttons */}
+              <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+                <button
+                  onClick={() => {
+                    import("html2canvas").then((mod) => {
+                      const html2canvas = mod.default;
+                      const canvasEl = document.querySelector("[style*='background: rgb(244, 240, 230)']") ||
+                        document.querySelector("[style*='background: #f4f0e6']") ||
+                        document.querySelector(".glass-panel");
+                      if (canvasEl) {
+                        html2canvas(canvasEl, { backgroundColor: "#f4f0e6", scale: 2 }).then((canvas) => {
+                          const link = document.createElement("a");
+                          link.download = `${room.name.toLowerCase().replace(/\s+/g, "-")}-layout-${selectedIndex + 1}.png`;
+                          link.href = canvas.toDataURL("image/png");
+                          link.click();
+                        });
+                      }
+                    }).catch(() => {
+                      alert("Export failed.");
+                    });
+                  }}
+                  className="btn-secondary"
+                  style={{ fontSize: "13px" }}
+                >
+                  <Share2 size={14} />
+                  <span>Export 2D CAD as PNG</span>
+                </button>
+              </div>
             </div>
 
             {/* Right Side: Score Breakdown & Confirmation Card */}
@@ -421,17 +930,43 @@ function LayoutView() {
 
                 <ScoreBreakdown scores={selectedLayout.scores} />
 
+                {/* Overlap / Collision Warning */}
+                {collisionCount > 0 && (
+                  <div style={{
+                    marginTop: "16px",
+                    padding: "12px 14px",
+                    background: "rgba(225, 29, 72, 0.08)",
+                    border: "1.5px solid rgba(225, 29, 72, 0.35)",
+                    borderRadius: "var(--radius-md)",
+                    color: "#be123c",
+                    fontSize: "12px",
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: "8px"
+                  }}>
+                    <AlertTriangle size={18} style={{ flexShrink: 0, marginTop: "1px" }} />
+                    <div>
+                      <strong>Overlap Detected ({collisionCount} items)</strong>
+                      <div style={{ marginTop: "2px", color: "var(--text-secondary)" }}>
+                        Some furniture items are touching or overlapping. Please drag them apart to clear all paths before confirming.
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Confirm Action Button */}
-                <div style={{ marginTop: "24px" }}>
+                <div style={{ marginTop: "20px" }}>
                   <button
                     onClick={handleConfirm}
-                    disabled={isConfirming || isConfirmed}
+                    disabled={isConfirming || isConfirmed || collisionCount > 0}
                     className={isConfirmed ? "btn-secondary" : "btn-primary"}
                     style={{
                       width: "100%",
                       padding: "14px",
                       fontSize: "15px",
-                      fontWeight: 700
+                      fontWeight: 700,
+                      opacity: collisionCount > 0 ? 0.6 : 1,
+                      cursor: collisionCount > 0 ? "not-allowed" : "pointer"
                     }}
                   >
                     {isConfirming ? (
@@ -440,6 +975,11 @@ function LayoutView() {
                       <>
                         <CheckCircle2 size={18} color="#059669" />
                         <span>Confirmed Arrangement</span>
+                      </>
+                    ) : collisionCount > 0 ? (
+                      <>
+                        <AlertTriangle size={18} />
+                        <span>Fix Overlaps to Confirm</span>
                       </>
                     ) : (
                       <>
@@ -453,6 +993,14 @@ function LayoutView() {
             </div>
           </div>
         )}
+
+        {/* AI Style Recommendations Modal */}
+        <StyleModal
+          isOpen={isStyleModalOpen}
+          onClose={() => setIsStyleModalOpen(false)}
+          activeStyleId={activeStyle?.id}
+          onApplyStyle={(style) => setActiveStyle(style)}
+        />
       </main>
     </div>
   );

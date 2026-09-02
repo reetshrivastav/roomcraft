@@ -1,5 +1,5 @@
 const API_BASE_URL =
-  "http://localhost:5000";
+  import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export async function getRoom(roomId) {
   const response = await fetch(`${API_BASE_URL}/rooms/${roomId}`);

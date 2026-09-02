@@ -1,0 +1,162 @@
+[
+  {
+    "id": "scandinavian",
+    "name": "Scandinavian Modern",
+    "badge": "Nordic Light",
+    "description": "Light-filled minimalism with warm organic woods, airy off-white walls, and natural sage textiles.",
+    "colors": {
+      "wall": "#faf7f2",
+      "floor": "#d8c7b0",
+      "wood": "#c8ad8d",
+      "upholstery": "#e6e2db",
+      "accent": "#647c64",
+      "metal": "#2b2927"
+    },
+    "swatches": [
+      { "name": "Nordic White", "hex": "#faf7f2" },
+      { "name": "White Oak", "hex": "#c8ad8d" },
+      { "name": "Sage Green", "hex": "#647c64" },
+      { "name": "Cashmere Linen", "hex": "#e6e2db" },
+      { "name": "Matte Black", "hex": "#2b2927" }
+    ],
+    "flooring": "Light Oak Parquet",
+    "three": {
+      "floorColor": "#d8c7b0",
+      "floorRoughness": 0.7,
+      "wallColor": "#faf7f2",
+      "woodColor": "#c8ad8d",
+      "fabricColor": "#e6e2db",
+      "accentColor": "#647c64"
+    },
+    "designerTips": [
+      "Pair blonde oak dining and coffee tables with curved spindle chairs.",
+      "Use woven wool rugs and open-grain timber shelving for warmth.",
+      "Incorporate soft 2700K ambient illumination and organic linen drapery."
+    ],
+    "matchingSets": {
+      "living": "Light Oak media console + Off-white linen sofa + Sage green throw cushions",
+      "dining": "Solid oak dining table + Molded oak dining chairs with matte black legs",
+      "bedroom": "Natural oak platform bed + Flanking oak nightstands + Oatmeal cotton duvet"
+    }
+  },
+  {
+    "id": "industrial",
+    "name": "Industrial Loft",
+    "badge": "Urban Architectural",
+    "description": "Bold metropolitan aesthetic featuring reclaimed dark walnut, exposed concrete flooring, and cognac leather.",
+    "colors": {
+      "wall": "#ded9d2",
+      "floor": "#3a3d40",
+      "wood": "#4a3325",
+      "upholstery": "#92522c",
+      "accent": "#4a5568",
+      "metal": "#1a1a1a"
+    },
+    "swatches": [
+      { "name": "Urban Concrete", "hex": "#ded9d2" },
+      { "name": "Dark Slate", "hex": "#3a3d40" },
+      { "name": "Cognac Leather", "hex": "#92522c" },
+      { "name": "Reclaimed Walnut", "hex": "#4a3325" },
+      { "name": "Raw Steel", "hex": "#1a1a1a" }
+    ],
+    "flooring": "Polished Dark Concrete & Slate",
+    "three": {
+      "floorColor": "#3a3d40",
+      "floorRoughness": 0.85,
+      "wallColor": "#ded9d2",
+      "woodColor": "#4a3325",
+      "fabricColor": "#92522c",
+      "accentColor": "#4a5568"
+    },
+    "designerTips": [
+      "Contrast raw blackened steel frames with weathered, character-rich timber.",
+      "Choose distressed top-grain cognac leather for primary lounge seating.",
+      "Install directional track lights and exposed filament fixtures to create dramatic highlights."
+    ],
+    "matchingSets": {
+      "living": "Distressed cognac leather sofa + Dark walnut coffee table with steel legs",
+      "dining": "Reclaimed wood slab dining table + Matte black metal industrial chairs",
+      "bedroom": "Black iron pipe bed frame + Reclaimed walnut nightstands + Charcoal linen bedding"
+    }
+  },
+  {
+    "id": "minimalist",
+    "name": "Minimalist Sanctuary",
+    "badge": "Monochromatic Zen",
+    "description": "Purity of line and volume: seamless bleached ash, architectural white planes, and brushed satin aluminum.",
+    "colors": {
+      "wall": "#fcfcff",
+      "floor": "#e8e4dc",
+      "wood": "#dcd3c5",
+      "upholstery": "#f0eeeb",
+      "accent": "#9c9ba1",
+      "metal": "#a8abb0"
+    },
+    "swatches": [
+      { "name": "Gallery White", "hex": "#fcfcff" },
+      { "name": "Bleached Ash", "hex": "#dcd3c5" },
+      { "name": "Stone Greige", "hex": "#e8e4dc" },
+      { "name": "Satin Chrome", "hex": "#a8abb0" },
+      { "name": "Muted Charcoal", "hex": "#3f3f46" }
+    ],
+    "flooring": "Seamless Bleached Ash Wood",
+    "three": {
+      "floorColor": "#e8e4dc",
+      "floorRoughness": 0.5,
+      "wallColor": "#fcfcff",
+      "woodColor": "#dcd3c5",
+      "fabricColor": "#f0eeeb",
+      "accentColor": "#9c9ba1"
+    },
+    "designerTips": [
+      "Keep floor planes completely uncluttered to highlight spatial rhythm.",
+      "Favor handleless push-to-open cabinetry to preserve uninterrupted geometric planes.",
+      "Emphasize negative space around central walkways and breathing zones."
+    ],
+    "matchingSets": {
+      "living": "Low-profile ivory fabric sofa + Monolithic bleached ash block coffee table",
+      "dining": "Seamless matte white lacquered table + Minimalist molded shell chairs",
+      "bedroom": "Floating low-slung ash bedframe + Recessed LED backlighting + Crisp white percale"
+    }
+  },
+  {
+    "id": "japandi",
+    "name": "Japandi Warmth",
+    "badge": "Wabi-Sabi Harmony",
+    "description": "The seamless fusion of Scandinavian functionality and timeless Japanese organic balance.",
+    "colors": {
+      "wall": "#f5f0e8",
+      "floor": "#d4be9c",
+      "wood": "#a88863",
+      "upholstery": "#ede7db",
+      "accent": "#c27a5b",
+      "metal": "#3a352f"
+    },
+    "swatches": [
+      { "name": "Washi Beige", "hex": "#f5f0e8" },
+      { "name": "Smoked Hinoki", "hex": "#a88863" },
+      { "name": "Natural Bamboo", "hex": "#d4be9c" },
+      { "name": "Terracotta Clay", "hex": "#c27a5b" },
+      { "name": "Cast Iron", "hex": "#3a352f" }
+    ],
+    "flooring": "Natural Bamboo & Smoked Cypress",
+    "three": {
+      "floorColor": "#d4be9c",
+      "floorRoughness": 0.75,
+      "wallColor": "#f5f0e8",
+      "woodColor": "#a88863",
+      "fabricColor": "#ede7db",
+      "accentColor": "#c27a5b"
+    },
+    "designerTips": [
+      "Incorporate low-profile furniture to celebrate vertical headspace and calm.",
+      "Introduce handcrafted ceramic accessories and woven rattan accents.",
+      "Diffuse incoming daylight through sheer rice-paper texture screens."
+    ],
+    "matchingSets": {
+      "living": "Low wooden frame sofa with oatmeal cushions + Round smoked cedar coffee table",
+      "dining": "Curved bamboo edge dining table + Woven paper cord dining chairs",
+      "bedroom": "Tatami-inspired smoked timber platform bed + Terracotta washed linen duvet"
+    }
+  }
+]

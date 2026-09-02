@@ -38,10 +38,10 @@ function selectDiverseCandidates(candidates, targetCount = 8) {
     return candidates;
   }
 
-  // 1. Sort by average score to pick the highest quality anchor
+  // 1. Sort by weighted score based on Rules v2: Clearance 20%, Traffic 20%, Light 20%, Zone 40%
   const pool = [...candidates].sort((a, b) => {
-    const avgA = (a.scores.trafficFlow + a.scores.lightExposure + a.scores.clearance + a.scores.clustering) / 4;
-    const avgB = (b.scores.trafficFlow + b.scores.lightExposure + b.scores.clearance + b.scores.clustering) / 4;
+    const avgA = (a.scores.trafficFlow * 0.2) + (a.scores.lightExposure * 0.2) + (a.scores.clearance * 0.2) + (a.scores.clustering * 0.4);
+    const avgB = (b.scores.trafficFlow * 0.2) + (b.scores.lightExposure * 0.2) + (b.scores.clearance * 0.2) + (b.scores.clustering * 0.4);
     return avgB - avgA;
   });
 
@@ -98,25 +98,27 @@ function runGeneticAlgorithm(room, options = {}) {
   }
 
   if (generations < 1) {
-    throw new Error("Number of generations must be at least 1.");
+    throw new Error("Generations must be at least 1.");
   }
 
+  const { attachDiningChairs } = require("./diningChairs");
+
+  // Create generation 0
   let population = createFirstGeneration(room, populationSize);
-  let allEvaluatedCandidates = [];
+  const firstEvaluated = evaluatePopulation(room, population);
+  const allEvaluatedCandidates = [...firstEvaluated];
 
-  for (let generation = 0; generation < generations; generation++) {
-    const evaluated = evaluatePopulation(room, population);
-    allEvaluatedCandidates.push(...evaluated);
-
-    if (generation === generations - 1) {
-      break;
-    }
-
+  // Evolve generations
+  for (let g = 1; g < generations; g++) {
     const result = createNextGeneration(room, population, {
       parentCount,
-      childCount: populationSize,
       mutationRate,
       positionMutationAmount
+    });
+
+    const evaluated = evaluatePopulation(room, result.nextGeneration);
+    evaluated.forEach((item) => {
+      allEvaluatedCandidates.push(item);
     });
 
     population = result.nextGeneration;
@@ -125,17 +127,24 @@ function runGeneticAlgorithm(room, options = {}) {
   // Extract non-dominated global Pareto front
   const globalParetoFront = getParetoFront(allEvaluatedCandidates);
 
-  // Filter out any candidates with zero-clearance collision penalties
+  // Filter out any candidates with zero-clearance collision penalties or blocked swing zones
   const validCandidates = globalParetoFront.filter(c => (c.scores.clearance || 0) > 0.4);
-  const pool = validCandidates.length >= 4 ? validCandidates : globalParetoFront;
+  const pool = validCandidates.length > 0 ? validCandidates : globalParetoFront;
 
   // Select up to 8 fundamentally distinct layout options
   const finalDiverseOptions = selectDiverseCandidates(pool, 8);
+  const chosenCandidates = finalDiverseOptions.length > 0 ? finalDiverseOptions : globalParetoFront.slice(0, 1);
+
+  // Attach deterministic dining chairs to each candidate's chromosome
+  const paretoFrontWithChairs = chosenCandidates.map(cand => ({
+    ...cand,
+    chromosome: attachDiningChairs(cand.chromosome, room)
+  }));
 
   return {
     generations,
     populationSize,
-    paretoFront: finalDiverseOptions.length > 0 ? finalDiverseOptions : globalParetoFront.slice(0, 1)
+    paretoFront: paretoFrontWithChairs
   };
 }
 

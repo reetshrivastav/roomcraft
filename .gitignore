@@ -23,3 +23,5 @@ Thumbs.db
 
 # Testing / coverage
 coverage/
+scratch/
+.tempmediaStorage/

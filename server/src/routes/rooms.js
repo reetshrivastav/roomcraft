@@ -153,11 +153,15 @@ router.post("/", async (req, res) => {
 
     const room = await Room.create({
       userId,
+      name: roomData.name || "My Room",
+      roomType: roomData.roomType || "bedroom",
+      northFacing: roomData.northFacing || "top",
       width: roomData.width,
       height: roomData.height,
       doors: roomData.doors,
       windows: roomData.windows,
-      furnitureSelection: roomData.furnitureSelection
+      furnitureSelection: roomData.furnitureSelection,
+      customDimensions: roomData.customDimensions || {}
     });
 
     return res.status(201).json({
@@ -248,10 +252,10 @@ router.post("/:id/generate", async (req, res) => {
         furnitureSelection: room.furnitureSelection
       },
       {
-        populationSize: 10,
+        populationSize: 20,
         generations: 20,
-        parentCount: 4,
-        mutationRate: 0.2,
+        parentCount: 6,
+        mutationRate: 0.25,
         positionMutationAmount: 50
       }
     );
