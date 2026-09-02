@@ -14,7 +14,20 @@ app.use(express.json());
 app.use("/rooms", roomsRouter);
 app.use("/api/rooms", roomsRouter);
 
-// Test route
+// Root landing info
+app.get("/", (req, res) => {
+  res.json({
+    name: "RoomCraft Architectural API",
+    status: "online",
+    version: "2.0.0",
+    endpoints: {
+      health: "/api/health",
+      rooms: "/api/rooms"
+    }
+  });
+});
+
+// Test health route
 app.get("/api/health", (req, res) => {
   res.json({
     success: true,
