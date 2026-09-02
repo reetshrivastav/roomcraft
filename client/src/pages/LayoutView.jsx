@@ -342,9 +342,9 @@ function LayoutView() {
 
       {/* Floating Left Sidebar Toggle Button */}
       <button
+        className={`floating-editor-btn ${sidebarOpen ? "sidebar-open" : ""}`}
         onClick={() => setSidebarOpen(!sidebarOpen)}
         style={{
-          position: "fixed",
           left: sidebarOpen ? "360px" : "16px",
           top: "165px",
           zIndex: 100,
@@ -644,9 +644,9 @@ function LayoutView() {
         )}
       </div>
 
-      <main style={{ maxWidth: "1440px", margin: "0 auto", padding: "28px 24px 80px", width: "100%" }}>
+      <main className="responsive-main" style={{ maxWidth: "1440px", margin: "0 auto", padding: "28px 24px 80px", width: "100%" }}>
         {/* Top Navigation & Status Bar (Sticky beyond initial scroll) */}
-        <div style={{
+        <div className="sticky-control-bar" style={{
           position: "sticky",
           top: "68px",
           zIndex: 40,
@@ -665,7 +665,7 @@ function LayoutView() {
           marginBottom: "24px"
         }}>
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
               <Link to="/room-setup" style={{ color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "4px", fontSize: "13px" }}>
                 <ArrowLeft size={14} />
                 <span>Back to Setup</span>
@@ -675,7 +675,7 @@ function LayoutView() {
                 {room?.name || "My Room"} ({room?.roomType?.toUpperCase() || "BEDROOM"}) • {room?.width} × {room?.height} cm
               </span>
             </div>
-            <h1 style={{ fontSize: "28px", marginTop: "4px" }}>Generated Layout Options</h1>
+            <h1 className="sticky-control-title" style={{ fontSize: "28px", marginTop: "4px" }}>Generated Layout Options</h1>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -796,11 +796,7 @@ function LayoutView() {
             </span>
           </div>
 
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
-            gap: "14px"
-          }}>
+          <div className="archetype-options-grid">
             {generatedLayouts.map((item, index) => {
               const isSelected = index === selectedIndex;
               const isCurrentConfirmed = room?.selectedLayoutId === item._id;
@@ -859,7 +855,7 @@ function LayoutView() {
 
         {/* Main Presentation Area */}
         {selectedLayout && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "28px", alignItems: "start" }}>
+          <div className="layout-main-grid">
             {/* Center Canvas View (2D or 3D) */}
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               {viewMode === "2d" ? (

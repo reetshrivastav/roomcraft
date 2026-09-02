@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import * as THREE from "three";
-import { RotateCw, Maximize, Sun, Moon, Compass, Sparkles, Move, Trash2, Sliders } from "lucide-react";
+import { RotateCw, RotateCcw, ZoomIn, ZoomOut, Maximize, Sun, Moon, Compass, Sparkles, Move, Trash2, Sliders } from "lucide-react";
 
 /**
  * Helper to generate a realistic procedural oak wood texture canvas.
@@ -1029,10 +1029,125 @@ function Room3DView({
       updateCamera();
     };
 
+    dom.style.touchAction = "none";
+
+    let initialPinchDist = null;
+    let initialPinchRadius = null;
+
+    const onTouchStart = (e) => {
+      if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        const rect = dom.getBoundingClientRect();
+        mouse.x = ((touch.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((touch.clientY - rect.top) / rect.height) * 2 + 1;
+
+        controlsRef.current.startX = touch.clientX;
+        controlsRef.current.startY = touch.clientY;
+        controlsRef.current.prevX = touch.clientX;
+        controlsRef.current.prevY = touch.clientY;
+        controlsRef.current.isDragging = true;
+
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(furnitureGroups, true);
+
+        if (intersects.length > 0) {
+          let hitGroup = intersects[0].object;
+          while (hitGroup.parent && !hitGroup.userData?.furnitureId) {
+            hitGroup = hitGroup.parent;
+          }
+          if (hitGroup.userData?.index !== undefined) {
+            const idx = hitGroup.userData.index;
+            setSelectedIndex(idx);
+            controlsRef.current.dragTarget = {
+              type: "furniture",
+              index: idx,
+              startItemX: layout[idx].x,
+              startItemY: layout[idx].y
+            };
+            return;
+          }
+        }
+        controlsRef.current.dragTarget = "camera";
+      } else if (e.touches.length === 2) {
+        controlsRef.current.isDragging = false;
+        initialPinchDist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        initialPinchRadius = controlsRef.current.radius;
+      }
+    };
+
+    const onTouchMove = (e) => {
+      if (e.cancelable) e.preventDefault();
+
+      if (e.touches.length === 1 && controlsRef.current.isDragging) {
+        const touch = e.touches[0];
+        const deltaX = touch.clientX - controlsRef.current.prevX;
+        const deltaY = touch.clientY - controlsRef.current.prevY;
+        const target = controlsRef.current.dragTarget;
+
+        if (target?.type === "furniture" && onLayoutChange) {
+          const rect = dom.getBoundingClientRect();
+          mouse.x = ((touch.clientX - rect.left) / rect.width) * 2 - 1;
+          mouse.y = -((touch.clientY - rect.top) / rect.height) * 2 + 1;
+
+          raycaster.setFromCamera(mouse, camera);
+          if (raycaster.ray.intersectPlane(floorPlane, planeIntersection)) {
+            const itemIdx = target.index;
+            const item = layout[itemIdx];
+            const furn = catalogMap.get(item?.furnitureId);
+            if (furn && item) {
+              const custom = customDimensions[item.furnitureId];
+              const w = custom?.width || furn.width;
+              const d = custom?.depth || furn.depth;
+
+              const newX = Math.round(Math.max(10, Math.min(roomWidth - w - 10, planeIntersection.x + roomWidth / 2 - w / 2)));
+              const newY = Math.round(Math.max(10, Math.min(roomHeight - d - 10, planeIntersection.z + roomHeight / 2 - d / 2)));
+
+              const updated = [...layout];
+              updated[itemIdx] = { ...updated[itemIdx], x: newX, y: newY };
+              onLayoutChange(updated);
+            }
+          }
+        } else {
+          // Camera orbit rotation
+          controlsRef.current.theta -= deltaX * 0.007;
+          controlsRef.current.phi = Math.max(0.1, Math.min(Math.PI / 2 - 0.05, controlsRef.current.phi - deltaY * 0.007));
+          updateCamera();
+        }
+
+        controlsRef.current.prevX = touch.clientX;
+        controlsRef.current.prevY = touch.clientY;
+      } else if (e.touches.length === 2 && initialPinchDist && initialPinchRadius) {
+        const currentDist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        const scale = initialPinchDist / Math.max(1, currentDist);
+        controlsRef.current.radius = Math.max(350, Math.min(2400, initialPinchRadius * scale));
+        updateCamera();
+      }
+    };
+
+    const onTouchEnd = (e) => {
+      if (e.touches.length === 0) {
+        controlsRef.current.isDragging = false;
+        controlsRef.current.dragTarget = null;
+        initialPinchDist = null;
+        initialPinchRadius = null;
+      }
+    };
+
     dom.addEventListener("mousedown", onMouseDown);
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
     dom.addEventListener("wheel", onWheel, { passive: false });
+
+    dom.addEventListener("touchstart", onTouchStart, { passive: false });
+    window.addEventListener("touchmove", onTouchMove, { passive: false });
+    window.addEventListener("touchend", onTouchEnd);
+    window.addEventListener("touchcancel", onTouchEnd);
 
     // Render loop
     let animId;
@@ -1048,6 +1163,10 @@ function Room3DView({
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
       dom.removeEventListener("wheel", onWheel);
+      dom.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onTouchEnd);
+      window.removeEventListener("touchcancel", onTouchEnd);
       renderer.dispose();
     };
   }, [roomWidth, roomHeight, layout, furnitureCatalog, doors, windows, isNightMode, selectedIndex, roomType, northFacing, customDimensions, activeStyle]);
@@ -1056,6 +1175,29 @@ function Room3DView({
     controlsRef.current.theta = Math.PI / 4;
     controlsRef.current.phi = Math.PI / 3.6;
     controlsRef.current.radius = Math.max(950, Math.max(roomWidth, roomHeight) * 1.6);
+    if (cameraRef.current) {
+      const { radius, theta, phi } = controlsRef.current;
+      cameraRef.current.position.x = radius * Math.sin(phi) * Math.sin(theta);
+      cameraRef.current.position.y = radius * Math.cos(phi);
+      cameraRef.current.position.z = radius * Math.sin(phi) * Math.cos(theta);
+      cameraRef.current.lookAt(0, 20, 0);
+    }
+  };
+
+  const orbitBy = (deltaTheta, deltaPhi = 0) => {
+    controlsRef.current.theta += deltaTheta;
+    controlsRef.current.phi = Math.max(0.1, Math.min(Math.PI / 2 - 0.05, controlsRef.current.phi + deltaPhi));
+    if (cameraRef.current) {
+      const { radius, theta, phi } = controlsRef.current;
+      cameraRef.current.position.x = radius * Math.sin(phi) * Math.sin(theta);
+      cameraRef.current.position.y = radius * Math.cos(phi);
+      cameraRef.current.position.z = radius * Math.sin(phi) * Math.cos(theta);
+      cameraRef.current.lookAt(0, 20, 0);
+    }
+  };
+
+  const zoomBy = (factor) => {
+    controlsRef.current.radius = Math.max(350, Math.min(2400, controlsRef.current.radius * factor));
     if (cameraRef.current) {
       const { radius, theta, phi } = controlsRef.current;
       cameraRef.current.position.x = radius * Math.sin(phi) * Math.sin(theta);
@@ -1082,7 +1224,7 @@ function Room3DView({
   const selectedFurnData = selectedItemData ? catalogMap.get(selectedItemData.furnitureId) : null;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "10px", alignItems: "center", position: "relative" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "10px", alignItems: "center", position: "relative", width: "100%" }}>
       {/* 3D Controls Bar */}
       <div style={{
         display: "flex",
@@ -1091,48 +1233,62 @@ function Room3DView({
         width: "100%",
         maxWidth: 760,
         background: "var(--bg-card)",
-        padding: "8px 16px",
+        padding: "8px 14px",
         borderRadius: "var(--radius-md)",
         border: "1px solid var(--border-subtle)",
         boxShadow: "var(--shadow-sm)",
-        fontSize: "12px"
+        fontSize: "12px",
+        flexWrap: "wrap",
+        gap: "8px"
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--text-primary)" }}>
           <Compass size={15} color="#b47b48" />
-          <span style={{ fontWeight: 700 }}>Interactive 3D BIM Studio</span>
-          <span style={{ color: "var(--text-muted)", fontSize: "11px" }}>
-            (Click & Drag to Move Items • Drag Floor to Orbit)
-          </span>
+          <span style={{ fontWeight: 700 }}>Interactive 3D Studio</span>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          {selectedItemData && (
-            <>
-              <button
-                onClick={handleRotateSelected}
-                className="btn-secondary"
-                style={{ padding: "4px 8px", fontSize: "11px", color: "#b47b48" }}
-              >
-                <RotateCw size={12} />
-                <span>Rotate 90°</span>
-              </button>
-              <button
-                onClick={handleDeleteSelected}
-                className="btn-secondary"
-                style={{ padding: "4px 8px", fontSize: "11px", color: "#e11d48" }}
-              >
-                <Trash2 size={12} />
-                <span>Remove</span>
-              </button>
-            </>
-          )}
-
-          <button onClick={resetCamera} className="btn-secondary" style={{ padding: "4px 8px", fontSize: "11px" }}>
-            <RotateCw size={12} /><span>Reset View</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+          {/* Quick One-Tap Orbit Buttons for Mobile & Desktop */}
+          <button
+            onClick={() => orbitBy(-Math.PI / 6)}
+            className="btn-secondary"
+            style={{ padding: "4px 8px", fontSize: "11px" }}
+            title="Orbit Camera Left"
+          >
+            <RotateCcw size={12} />
+            <span>Orbit ↶</span>
+          </button>
+          <button
+            onClick={() => orbitBy(Math.PI / 6)}
+            className="btn-secondary"
+            style={{ padding: "4px 8px", fontSize: "11px" }}
+            title="Orbit Camera Right"
+          >
+            <RotateCw size={12} />
+            <span>Orbit ↷</span>
+          </button>
+          <button
+            onClick={() => zoomBy(0.85)}
+            className="btn-secondary"
+            style={{ padding: "4px 7px", fontSize: "11px" }}
+            title="Zoom In"
+          >
+            <ZoomIn size={12} />
+          </button>
+          <button
+            onClick={() => zoomBy(1.18)}
+            className="btn-secondary"
+            style={{ padding: "4px 7px", fontSize: "11px" }}
+            title="Zoom Out"
+          >
+            <ZoomOut size={12} />
           </button>
 
-          <button onClick={setTopDown} className="btn-secondary" style={{ padding: "4px 8px", fontSize: "11px" }}>
-            <Maximize size={12} /><span>Top-Down</span>
+          <button onClick={resetCamera} className="btn-secondary" style={{ padding: "4px 8px", fontSize: "11px" }} title="Reset 3D Camera">
+            <span>Reset</span>
+          </button>
+
+          <button onClick={setTopDown} className="btn-secondary" style={{ padding: "4px 8px", fontSize: "11px" }} title="Top-Down Orthogonal View">
+            <Maximize size={12} /><span>Top</span>
           </button>
 
           <button
@@ -1145,7 +1301,7 @@ function Room3DView({
             }}
           >
             {isNightMode ? <Moon size={12} /> : <Sun size={12} />}
-            <span>{isNightMode ? "Warm Evening" : "Bright Daylight"}</span>
+            <span>{isNightMode ? "Warm" : "Day"}</span>
           </button>
         </div>
       </div>
@@ -1198,22 +1354,42 @@ function Room3DView({
             transform: "translateX(-50%)",
             background: "rgba(255, 255, 255, 0.95)",
             backdropFilter: "blur(8px)",
-            padding: "8px 18px",
+            padding: "8px 16px",
             borderRadius: "var(--radius-full)",
-            border: "1px solid #059669",
-            boxShadow: "0 4px 16px rgba(0, 0, 0, 0.12)",
+            border: "1.5px solid #059669",
+            boxShadow: "0 4px 18px rgba(0, 0, 0, 0.15)",
             display: "flex",
             alignItems: "center",
-            gap: "12px",
+            flexWrap: "wrap",
+            justifyContent: "center",
+            gap: "10px",
             fontSize: "12px",
-            zIndex: 10
+            zIndex: 10,
+            maxWidth: "92%"
           }}>
-            <span style={{ fontWeight: 700, color: "#059669" }}>✓ Selected: {selectedFurnData.name}</span>
-            <span style={{ color: "var(--text-muted)" }}>|</span>
-            <span style={{ color: "var(--text-secondary)" }}>Pos: ({selectedItemData.x}, {selectedItemData.y}) cm</span>
-            <span style={{ color: "var(--text-muted)" }}>|</span>
-            <span style={{ color: "var(--primary)", fontWeight: 700 }}>Rot: {selectedItemData.rotation}°</span>
-            <span style={{ color: "#059669", fontSize: "11px" }}>• Drag directly to move</span>
+            <span style={{ fontWeight: 700, color: "#059669" }}>✓ {selectedFurnData.name}</span>
+            <span style={{ color: "var(--primary)", fontWeight: 700 }}>({selectedItemData.rotation}°)</span>
+            <button
+              onClick={handleRotateSelected}
+              className="btn-primary"
+              style={{ padding: "4px 10px", fontSize: "11px", display: "flex", alignItems: "center", gap: "4px" }}
+              title="Rotate 90 degrees"
+            >
+              <RotateCw size={12} />
+              <span>Rotate 90°</span>
+            </button>
+            <button
+              onClick={handleDeleteSelected}
+              style={{
+                padding: "4px 8px", fontSize: "11px", background: "rgba(225, 29, 72, 0.1)",
+                color: "#be123c", border: "1px solid rgba(225, 29, 72, 0.25)",
+                borderRadius: "var(--radius-sm)", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px"
+              }}
+              title="Remove item"
+            >
+              <Trash2 size={11} />
+              <span>Remove</span>
+            </button>
           </div>
         )}
       </div>

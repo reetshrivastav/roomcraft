@@ -305,7 +305,7 @@ function RoomSetup() {
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "var(--bg-primary)" }}>
       <Navbar />
 
-      <main style={{ maxWidth: "1400px", margin: "0 auto", padding: "32px 24px 80px", width: "100%" }}>
+      <main className="responsive-main" style={{ maxWidth: "1400px", margin: "0 auto", padding: "32px 24px 80px", width: "100%" }}>
         {/* Page Header */}
         <div style={{ marginBottom: "28px" }}>
           <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--primary)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
@@ -329,7 +329,7 @@ function RoomSetup() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px", alignItems: "start" }}>
+        <form onSubmit={handleSubmit} className="room-setup-grid">
           {/* Left Column: Form Controls */}
           <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
 

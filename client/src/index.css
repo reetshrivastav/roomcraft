@@ -248,3 +248,123 @@ input, select, textarea {
 .pulse-glow {
   animation: pulseGlow 2.5s infinite;
 }
+
+/* =========================================================
+   RESPONSIVE DESIGN SYSTEM & MOBILE TOUCH ENHANCEMENTS
+   ========================================================= */
+
+/* Main Layout Grids */
+.layout-main-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 28px;
+  align-items: start;
+}
+
+.room-setup-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+.archetype-options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+/* Floating Action Button (FAB) for Furniture Editor */
+.floating-editor-btn {
+  position: fixed;
+  left: 16px;
+  top: 165px;
+  z-index: 100;
+  background: #ffffff;
+  border: 1.5px solid var(--primary);
+  border-radius: var(--radius-full);
+  padding: 10px 14px;
+  box-shadow: 0 6px 20px rgba(180, 123, 72, 0.25);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s ease, bottom 0.3s ease;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+/* Responsive Touch Container */
+.touch-no-scroll {
+  touch-action: none;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+/* Tablet & Mobile Media Queries */
+@media (max-width: 960px) {
+  .layout-main-grid {
+    grid-template-columns: 1fr !important;
+    gap: 20px;
+  }
+  
+  .room-setup-grid {
+    grid-template-columns: 1fr !important;
+    gap: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Navbar */
+  .app-navbar {
+    padding: 12px 16px !important;
+  }
+  .app-navbar-subtext {
+    display: none !important;
+  }
+  .app-nav-link-text {
+    display: none !important;
+  }
+  
+  /* Main Container */
+  .responsive-main {
+    padding: 16px 14px 90px !important;
+  }
+
+  /* Sticky Header */
+  .sticky-control-bar {
+    top: 60px !important;
+    padding: 12px 14px !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+  .sticky-control-title {
+    font-size: 20px !important;
+  }
+
+  /* Archetype Options Grid on Mobile: 2 even columns */
+  .archetype-options-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+
+  /* Relocate Floating Furniture Button to Bottom on Mobile to NOT obscure header */
+  .floating-editor-btn {
+    top: auto !important;
+    bottom: 20px !important;
+    left: 16px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
+  }
+  .floating-editor-btn.sidebar-open {
+    left: 16px !important;
+    bottom: calc(100vh - 70px) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .archetype-options-grid {
+    grid-template-columns: 1fr !important;
+  }
+}

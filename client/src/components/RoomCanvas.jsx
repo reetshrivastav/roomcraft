@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useCallback } from "react";
-import { Sun, Footprints, ShieldCheck, RotateCw, Move } from "lucide-react";
+import { Sun, Footprints, ShieldCheck, RotateCw, Move, Trash2 } from "lucide-react";
 
 const CATEGORY_STYLES = {
   bed: { bg: "rgba(180, 123, 72, 0.15)", border: "#b47b48", text: "#5c3818", icon: "🛏️" },
@@ -78,11 +78,46 @@ function RoomCanvas({
     }
   }, [editable, layout]);
 
+  const handleTouchStart = (e, index) => {
+    if (!editable || !e.touches || e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    setSelectedIndex(index);
+    setDragIndex(index);
+    dragStart.current = {
+      mouseX: touch.clientX,
+      mouseY: touch.clientY,
+      itemX: layout[index].x,
+      itemY: layout[index].y
+    };
+  };
+
   const handleMouseMove = useCallback((e) => {
     if (dragIndex === null || !dragStart.current || !editable || !onLayoutChange) return;
 
     const dx = (e.clientX - dragStart.current.mouseX) / scale;
     const dy = (e.clientY - dragStart.current.mouseY) / scale;
+
+    const item = layout[dragIndex];
+    const { width: baseW, depth: baseD } = getItemDimensions(item.furnitureId);
+
+    const isRotated = item.rotation === 90 || item.rotation === 270;
+    const w = isRotated ? baseD : baseW;
+    const h = isRotated ? baseW : baseD;
+
+    const newX = Math.round(Math.max(0, Math.min(roomWidth - w, dragStart.current.itemX + dx)));
+    const newY = Math.round(Math.max(0, Math.min(roomHeight - h, dragStart.current.itemY + dy)));
+
+    const newLayout = [...layout];
+    newLayout[dragIndex] = { ...newLayout[dragIndex], x: newX, y: newY };
+    onLayoutChange(newLayout);
+  }, [dragIndex, editable, layout, onLayoutChange, scale, getItemDimensions, roomWidth, roomHeight]);
+
+  const handleTouchMove = useCallback((e) => {
+    if (dragIndex === null || !dragStart.current || !editable || !onLayoutChange || !e.touches || e.touches.length !== 1) return;
+    if (e.cancelable) e.preventDefault();
+    const touch = e.touches[0];
+    const dx = (touch.clientX - dragStart.current.mouseX) / scale;
+    const dy = (touch.clientY - dragStart.current.mouseY) / scale;
 
     const item = layout[dragIndex];
     const { width: baseW, depth: baseD } = getItemDimensions(item.furnitureId);
@@ -143,6 +178,9 @@ function RoomCanvas({
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleMouseUp}
+      onTouchCancel={handleMouseUp}
     >
       {/* Canvas Top Control Bar */}
       {interactive && (
@@ -480,9 +518,11 @@ function RoomCanvas({
                 onMouseEnter={() => { if (dragIndex === null) setHoveredItem(index); }}
                 onMouseLeave={() => setHoveredItem(null)}
                 onMouseDown={(e) => handleMouseDown(e, index)}
+                onTouchStart={(e) => handleTouchStart(e, index)}
                 onClick={(e) => { if (editable) { e.stopPropagation(); setSelectedIndex(index); } }}
                 style={{
                   position: "absolute",
+                  touchAction: "none",
                   left: posX,
                   top: posY,
                   width: w,
@@ -562,6 +602,63 @@ function RoomCanvas({
           })}
         </div>
       </div>
+
+      {/* Selected Item Control Bar (Essential for Mobile & Touch) */}
+      {selectedIndex !== null && layout[selectedIndex] && (
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px",
+          width: "100%", maxWidth: canvasWidth + 40, padding: "10px 16px",
+          background: "#ffffff", borderRadius: "var(--radius-md)", border: "1.5px solid var(--primary)",
+          boxShadow: "0 4px 16px rgba(180, 123, 72, 0.2)", fontSize: "13px"
+        }}>
+          {(() => {
+            const item = layout[selectedIndex];
+            const furniture = catalogMap.get(item.furnitureId);
+            if (!furniture) return null;
+            const { width: baseW, depth: baseD } = getItemDimensions(item.furnitureId);
+            return (
+              <>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span style={{ fontWeight: 700, color: "var(--primary)" }}>✓ {furniture.name}</span>
+                  <span style={{ color: "var(--text-muted)", fontSize: "12px" }}>({item.x}, {item.y} cm)</span>
+                  <span style={{ background: "rgba(180, 123, 72, 0.12)", color: "var(--primary)", padding: "2px 8px", borderRadius: "10px", fontSize: "11px", fontWeight: 700 }}>
+                    {item.rotation}°
+                  </span>
+                </div>
+                {editable && (
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <button
+                      onClick={handleRotateSelected}
+                      className="btn-primary"
+                      style={{ padding: "6px 14px", fontSize: "12px", display: "flex", alignItems: "center", gap: "4px" }}
+                      title="Rotate 90 degrees"
+                    >
+                      <RotateCw size={14} />
+                      <span>Rotate 90°</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        const updated = layout.filter((_, i) => i !== selectedIndex);
+                        setSelectedIndex(null);
+                        onLayoutChange(updated);
+                      }}
+                      style={{
+                        padding: "6px 12px", fontSize: "12px", background: "rgba(225, 29, 72, 0.1)",
+                        color: "#be123c", border: "1px solid rgba(225, 29, 72, 0.25)",
+                        borderRadius: "var(--radius-sm)", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px"
+                      }}
+                      title="Remove item from layout"
+                    >
+                      <Trash2 size={13} />
+                      <span>Remove</span>
+                    </button>
+                  </div>
+                )}
+              </>
+            );
+          })()}
+        </div>
+      )}
 
       {/* Item Inspector HUD */}
       {hoveredItem !== null && layout[hoveredItem] && (
