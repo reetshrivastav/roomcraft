@@ -298,12 +298,38 @@ function Home() {
       <footer style={{
         marginTop: "auto",
         borderTop: "1px solid var(--border-subtle)",
-        padding: "24px",
+        padding: "28px 24px",
         textAlign: "center",
         color: "var(--text-muted)",
-        fontSize: "13px"
+        fontSize: "13px",
+        display: "flex",
+        flexDirection: "column",
+        gap: "6px",
+        alignItems: "center"
       }}>
-        RoomCraft • Architectural BIM & AI Layout Studio
+        <div>
+          RoomCraft • Architectural Spatial AI & Interior BIM Studio
+        </div>
+        <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
+          Engineered collaboratively by{" "}
+          <a
+            href="https://github.com/reetshrivastav"
+            target="_blank"
+            rel="noreferrer"
+            style={{ color: "var(--primary)", fontWeight: 600, textDecoration: "none" }}
+          >
+            Reet Shrivastav
+          </a>{" "}
+          &{" "}
+          <a
+            href="https://github.com/pranshi2300"
+            target="_blank"
+            rel="noreferrer"
+            style={{ color: "var(--primary)", fontWeight: 600, textDecoration: "none" }}
+          >
+            Pranshi Gupta
+          </a>
+        </div>
       </footer>
     </div>
   );

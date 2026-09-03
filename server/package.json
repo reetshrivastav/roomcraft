@@ -1,14 +1,17 @@
 {
-  "name": "server",
+  "name": "roomcraft-server",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "RoomCraft Spatial AI & Genetic Algorithm Backend Server",
+  "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["genetic-algorithm", "nsga-ii", "bim", "architecture", "interior-design", "spatial-optimization"],
+  "contributors": [
+    { "name": "Reet Shrivastav", "url": "https://github.com/reetshrivastav" },
+    { "name": "Pranshi Gupta", "url": "https://github.com/pranshi2300" }
+  ],
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {

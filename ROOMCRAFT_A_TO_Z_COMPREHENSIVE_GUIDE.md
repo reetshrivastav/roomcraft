@@ -1,4 +1,5 @@
 # 🏛️ RoomCraft: A-to-Z Comprehensive Master Guide
+> **Authors & Engineering Leads**: [Reet Shrivastav](https://github.com/reetshrivastav) & [Pranshi Gupta](https://github.com/pranshi2300)
 
 ---
 
@@ -436,3 +437,7 @@ Deploying the React Vite frontend on [Vercel](https://vercel.com/):
 
 ## 13. Summary & Project Takeaways
 RoomCraft demonstrates how classical computer science algorithms (Multi-Objective Genetic Algorithms, Pareto Optimization, Computational Geometry) can merge with modern frontend design (Three.js WebGL, React 19, Architectural Glassmorphism) to solve high-impact, real-world spatial problems with zero human trial-and-error.
+
+### 👥 Authors & Collaborators
+* **Reet Shrivastav** — [@reetshrivastav](https://github.com/reetshrivastav)
+* **Pranshi Gupta** — [@pranshi2300](https://github.com/pranshi2300)

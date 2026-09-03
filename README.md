@@ -1,11 +1,12 @@
-# 🏛️ RoomCraft — Architectural AI Studio
+# 🏛️ RoomCraft — Architectural Spatial AI Studio
 ### Intelligent 2D CAD Floorplanning & 3D Interactive BIM Interior Design
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-success?style=for-the-badge&logo=vercel)](https://roomcraft-tau.vercel.app/)
+[![Backend API](https://img.shields.io/badge/API-Render-46e3b7?style=for-the-badge&logo=render)](https://roomcraft-api.onrender.com)
 [![React](https://img.shields.io/badge/React-19-61dafb?style=for-the-badge&logo=react)](https://react.dev/)
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-black?style=for-the-badge&logo=three.js)](https://threejs.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-v18+-339933?style=for-the-badge&logo=node.js)](https://nodejs.org/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47a248?style=for-the-badge&logo=mongodb)](https://www.mongodb.com/)
-[![Vite](https://img.shields.io/badge/Vite-Fast%20Bundler-646cff?style=for-the-badge&logo=vite)](https://vitejs.dev/)
 [![License: ISC](https://img.shields.io/badge/License-ISC-blue?style=for-the-badge)](LICENSE)
 
 **RoomCraft** is an intelligent, full-stack architectural design studio and spatial optimization platform. Powered by **Multi-Objective Genetic Algorithms (NSGA-II)**, RoomCraft automatically computes, arranges, and presents ergonomic, code-compliant, and aesthetically balanced interior layouts across **2D CAD Blueprints** and **Interactive 3D WebGL Environments**.
@@ -159,48 +160,6 @@ npm run dev
 
 ---
 
-## 🚀 Production Cloud Deployment Guide
-
-### A. Database Deployment (MongoDB Atlas)
-1. Log in to [MongoDB Atlas](https://www.mongodb.com/atlas) and create a free M0 cluster.
-2. In **Database Access**, create a user with read/write privileges.
-3. In **Network Access**, add `0.0.0.0/0` (allow access from anywhere) so cloud hosts like Render can connect.
-4. Click **Connect** → **Drivers** and copy your connection string (`MONGO_URI`).
-
----
-
-### B. Backend Deployment (Render or Railway)
-
-#### Deploying on [Render](https://render.com/):
-1. Create a new **Web Service** and connect your GitHub repository `reetshrivastav/roomcraft`.
-2. Configure settings:
-   * **Root Directory**: `server`
-   * **Environment**: `Node`
-   * **Build Command**: `npm install`
-   * **Start Command**: `npm start`
-3. In **Environment Variables**, add:
-   * `MONGO_URI`: Your MongoDB Atlas connection string.
-   * `PORT`: `5000` (or leave default).
-4. Deploy! Your backend API will be live at `https://<your-service-name>.onrender.com`.
-
----
-
-### C. Frontend Deployment (Vercel)
-
-#### Deploying on [Vercel](https://vercel.com/):
-1. Log in to Vercel, click **Add New** → **Project**, and select your GitHub repository.
-2. Configure settings:
-   * **Framework Preset**: `Vite`
-   * **Root Directory**: `client`
-   * **Build Command**: `npm run build`
-   * **Output Directory**: `dist`
-3. Under **Environment Variables**, add:
-   * `VITE_API_URL`: Your deployed backend URL (e.g. `https://<your-service-name>.onrender.com`).
-4. Click **Deploy**!
-   *(SPA client-side routing is handled automatically via [client/vercel.json](client/vercel.json)).*
-
----
-
 ## 📜 Shared Spatial Data Contract
 
 All dimensions and coordinates adhere to the unified coordinate space:
@@ -211,7 +170,16 @@ All dimensions and coordinates adhere to the unified coordinate space:
 
 ---
 
+## 👥 Authors & Collaborators
+
+RoomCraft was designed, researched, and engineered collaboratively by:
+
+* **Reet Shrivastav** — [@reetshrivastav](https://github.com/reetshrivastav)
+* **Pranshi Gupta** — [@pranshi2300](https://github.com/pranshi2300)
+
+---
+
 ## 🤝 Contributing & License
-Contributions are welcome! Please open an issue or submit a Pull Request.
+Contributions and feedback are welcome! Feel free to open an issue or submit a Pull Request.
 
 Released under the **ISC License**. Built with ❤️ for architects, interior designers, and homeowners.

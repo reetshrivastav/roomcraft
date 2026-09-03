@@ -1,8 +1,12 @@
 {
-  "name": "client",
+  "name": "roomcraft-client",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "contributors": [
+    { "name": "Reet Shrivastav", "url": "https://github.com/reetshrivastav" },
+    { "name": "Pranshi Gupta", "url": "https://github.com/pranshi2300" }
+  ],
   "scripts": {
     "dev": "vite",
     "build": "vite build",
